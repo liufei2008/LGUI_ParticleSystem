@@ -2,6 +2,8 @@
 
 #include "UIParticleSystemRendererItem.h"
 #include "Engine.h"
+#include "Core/LGUIMesh/UIDrawcallMesh.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 
 #define LOCTEXT_NAMESPACE "UIParticleSystemRendererItem"
@@ -36,6 +38,33 @@ void UUIParticleSystemRendererItem::ApplyUIActiveState()
 		UIDrawcallMesh->SetUIMeshVisibility(this->IsUIActiveInHierarchy());
 	}
 	Super::ApplyUIActiveState();
+}
+void UUIParticleSystemRendererItem::SetClipType(ELGUICanvasClipType clipType)
+{
+	if (!IsValid(DynamicMaterial))
+	{
+		if (Material.IsValid())
+		{
+			DynamicMaterial = UMaterialInstanceDynamic::Create(Material.Get(), this);
+			UIDrawcallMesh->SetMaterial(0, DynamicMaterial);
+		}
+	}
+}
+void UUIParticleSystemRendererItem::SetRectClipParameter(const FVector4& OffsetAndSize, const FVector4& Feather)
+{
+	if (IsValid(DynamicMaterial))
+	{
+		DynamicMaterial->SetVectorParameterValue(FName("RectClipOffsetAndSize"), FLinearColor(OffsetAndSize));
+		DynamicMaterial->SetVectorParameterValue(FName("RectClipFeather"), FLinearColor(Feather));
+	}
+}
+void UUIParticleSystemRendererItem::SetTextureClipParameter(UTexture* ClipTex, const FVector4& OffsetAndSize)
+{
+	if (IsValid(DynamicMaterial))
+	{
+		DynamicMaterial->SetTextureParameterValue(FName("ClipTexture"), ClipTex);
+		DynamicMaterial->SetVectorParameterValue(FName("TextureClipOffsetAndSize"), FLinearColor(OffsetAndSize));
+	}
 }
 
 AUIParticleSystemRendererItemActor::AUIParticleSystemRendererItemActor()

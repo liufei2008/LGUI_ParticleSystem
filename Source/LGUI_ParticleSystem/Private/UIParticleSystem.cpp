@@ -59,7 +59,35 @@ void UUIParticleSystem::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 void UUIParticleSystem::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	WorldParticleComponent.Reset();
+	if (WorldParticleComponent.IsValid())
+	{
+		auto WorldParticleActor = WorldParticleComponent->GetOwner();
+		if (IsValid(WorldParticleActor))
+		{
+			WorldParticleActor->Destroy();
+		}
+		WorldParticleComponent.Reset();
+	}
+	RenderEntries.Empty();
+	for (auto item : UIParticleSystemRenderers)
+	{
+		if (IsValid(item))
+		{
+			auto itemActor = item->GetOwner();
+			if (IsValid(itemActor))
+			{
+				itemActor->Destroy();
+			}
+		}
+	}
+	UIParticleSystemRenderers.Empty();
+	if (UpdateAgentWidget.IsValid())
+	{
+		if (IsValid(GEngine) && IsValid(GEngine->GameViewport))
+		{
+			GEngine->GameViewport->RemoveViewportWidgetContent(UpdateAgentWidget.ToSharedRef());
+		}
+	}
 }
 void UUIParticleSystem::ApplyUIActiveState()
 {
@@ -75,7 +103,7 @@ void UUIParticleSystem::OnPaintUpdate()
 		if (WorldParticleComponent.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_UIParticleSystem);
-			auto rootUIItem = this->GetRootCanvas()->GetUIItem();
+			auto rootUIItem = this->GetRenderCanvas()->GetUIItem();
 			auto rootSpaceLocation = rootUIItem->GetComponentTransform().InverseTransformPosition(this->GetComponentLocation());
 			auto rootSpaceLocation2D = FVector2D(rootSpaceLocation.X, rootSpaceLocation.Y);
 			WorldParticleComponent->SetTransformationForUIRendering(rootSpaceLocation2D, FVector2D(this->GetRelativeScale3D()), this->GetRelativeRotation().Yaw);

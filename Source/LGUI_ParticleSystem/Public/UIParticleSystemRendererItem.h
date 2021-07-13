@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Core/ActorComponent/UIDirectMeshRenderable.h"
 #include "Core/Actor/UIBaseActor.h"
+#include "Core/ActorComponent/LGUICanvas.h"
 #include "UIParticleSystemRendererItem.generated.h"
 
 class ULGUIWorldParticleSystemComponent;
@@ -23,8 +24,14 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
-private:
+protected:
 	virtual void ApplyUIActiveState()override;
+
+	virtual void SetClipType(ELGUICanvasClipType clipType)override;
+	virtual void SetRectClipParameter(const FVector4& OffsetAndSize, const FVector4& Feather)override;
+	virtual void SetTextureClipParameter(UTexture* ClipTex, const FVector4& OffsetAndSize)override;
+
+	UPROPERTY(Transient) class UMaterialInstanceDynamic* DynamicMaterial = nullptr;
 };
 
 UCLASS(Transient)
