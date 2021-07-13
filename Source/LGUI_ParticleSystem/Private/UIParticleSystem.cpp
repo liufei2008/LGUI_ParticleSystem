@@ -47,8 +47,8 @@ void UUIParticleSystem::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 		{
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{
-				auto UIDrawcallMesh = UIParticleSystemRenderers[i]->GetUIDrawcallMesh();
-				if (UIDrawcallMesh.IsValid())
+				auto UIDrawcallMesh = UIParticleSystemRenderers[i]->GetDrawcallMesh();
+				if (UIDrawcallMesh != nullptr)
 				{
 					UIDrawcallMesh->GenerateOrUpdateMesh(false, 1);
 				}
@@ -61,6 +61,11 @@ void UUIParticleSystem::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 	WorldParticleComponent.Reset();
 }
+void UUIParticleSystem::ApplyUIActiveState()
+{
+	Super::ApplyUIActiveState();
+}
+
 DECLARE_CYCLE_STAT(TEXT("UIParticleSystem RenderToUI"), STAT_UIParticleSystem, STATGROUP_LGUI);
 void UUIParticleSystem::OnPaintUpdate()
 {
@@ -80,10 +85,10 @@ void UUIParticleSystem::OnPaintUpdate()
 			auto locationOffset = FVector2D::ZeroVector;
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{
-				auto UIDrawcallMesh = UIParticleSystemRenderers[i]->GetUIDrawcallMesh();
-				if (UIDrawcallMesh.IsValid())
+				auto UIDrawcallMesh = UIParticleSystemRenderers[i]->GetDrawcallMesh();
+				if (UIDrawcallMesh != nullptr)
 				{
-					WorldParticleComponent->RenderUI(UIDrawcallMesh.Get(), RenderEntries[i], layoutScale, locationOffset);
+					WorldParticleComponent->RenderUI(UIDrawcallMesh, RenderEntries[i], layoutScale, locationOffset, bUseAlpha ? this->GetFinalAlpha01() : 1.0f);
 				}
 			}
 		}
@@ -109,7 +114,7 @@ void UUIParticleSystem::CheckParticleSystem()
 				{
 					auto ParticleSytemRendererItemActor = World->SpawnActor<AUIParticleSystemRendererItemActor>();
 					auto RendererItem = ParticleSytemRendererItemActor->GetUIParticleSystemRendererItem();
-					RendererItem->AttachToComponent(this->GetRootCanvas()->GetUIItem(), FAttachmentTransformRules::KeepRelativeTransform);
+					RendererItem->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 					RendererItem->SetWidth(0);
 					RendererItem->SetHeight(0);
 					RendererItem->SetMaterial(RenderEntries[i].Material);
@@ -127,7 +132,13 @@ void UUIParticleSystem::PostEditChangeProperty(struct FPropertyChangedEvent& Pro
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 }
 #endif
-
+void UUIParticleSystem::SetUseAlpha(bool value)
+{
+	if (bUseAlpha != value)
+	{
+		bUseAlpha = value;
+	}
+}
 
 
 AUIParticleSystemActor::AUIParticleSystemActor()

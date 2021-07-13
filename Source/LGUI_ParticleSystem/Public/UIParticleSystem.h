@@ -21,7 +21,8 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason)override;
 private:
-	 TWeakObjectPtr<class ULGUIWorldParticleSystemComponent> WorldParticleComponent = nullptr;
+	virtual void ApplyUIActiveState()override;
+	TWeakObjectPtr<class ULGUIWorldParticleSystemComponent> WorldParticleComponent = nullptr;
 
 	void CheckParticleSystem();
 #if WITH_EDITOR
@@ -33,7 +34,19 @@ private:
 	UPROPERTY(Transient)
 		TArray<class UUIParticleSystemRendererItem*> UIParticleSystemRenderers;
 	TSharedPtr<class SLGUIParticleSystemUpdateAgentWidget> UpdateAgentWidget = nullptr;
+
+	/** Particle color relate to this UI element's alpha. */
+	UPROPERTY(EditAnywhere, Category = "LGUI")
+		bool bUseAlpha = true;
+public:
+	UFUNCTION(BlueprintCallable, Category = "LGUI")
+		class ULGUIWorldParticleSystemComponent* GetWorldParticleComponent()const { return WorldParticleComponent.Get(); }
+	UFUNCTION(BlueprintCallable, Category = "LGUI")
+		bool GetUseAlpha()const { return bUseAlpha; }
+	UFUNCTION(BlueprintCallable, Category = "LGUI")
+		void SetUseAlpha(bool value);
 };
+
 
 UCLASS()
 class LGUI_PARTICLESYSTEM_API AUIParticleSystemActor : public AUIBaseActor

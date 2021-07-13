@@ -23,12 +23,8 @@ public:
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
-	TWeakObjectPtr<UUIDrawcallMesh> GetUIDrawcallMesh() { return UIDrawcallMesh; }
-	virtual void SetDrawcallMesh(UUIDrawcallMesh* InUIDrawcallMesh)override;
-	void SetMaterial(UMaterialInterface* InMaterial);
 private:
-	TWeakObjectPtr<UMaterialInterface> Material;
-	TWeakObjectPtr<UUIDrawcallMesh> UIDrawcallMesh;
+	virtual void ApplyUIActiveState()override;
 };
 
 UCLASS(Transient)

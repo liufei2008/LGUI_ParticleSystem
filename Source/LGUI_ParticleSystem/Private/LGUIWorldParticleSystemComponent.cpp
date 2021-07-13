@@ -87,18 +87,18 @@ void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(FVector2
 	SetRelativeTransform(FTransform(NewRotation, NewLocation, NewScale));
 }
 
-void ULGUIWorldParticleSystemComponent::RenderUI(UUIDrawcallMesh* UIMeshData, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, FVector2D LocationOffset)
+void ULGUIWorldParticleSystemComponent::RenderUI(UUIDrawcallMesh* UIMeshData, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, FVector2D LocationOffset, float Alpha01)
 {
 	if (!GetSystemInstance())
 		return;
 
 	if (UNiagaraSpriteRendererProperties* SpriteRenderer = Cast<UNiagaraSpriteRendererProperties>(RendererEntry.RendererProperties))
 	{
-		AddSpriteRendererData(&UIMeshData->MeshSection, RendererEntry.Emitter->GetMaxParticleCountEstimate(), RendererEntry.EmitterInstance, SpriteRenderer, ScaleFactor, LocationOffset);
+		AddSpriteRendererData(&UIMeshData->MeshSection, RendererEntry.Emitter->GetMaxParticleCountEstimate(), RendererEntry.EmitterInstance, SpriteRenderer, ScaleFactor, LocationOffset, Alpha01);
 	}
 	else if (UNiagaraRibbonRendererProperties* RibbonRenderer = Cast<UNiagaraRibbonRendererProperties>(RendererEntry.RendererProperties))
 	{
-		AddRibbonRendererData(&UIMeshData->MeshSection, RendererEntry.Emitter->GetMaxParticleCountEstimate(), RendererEntry.EmitterInstance, RibbonRenderer, ScaleFactor, LocationOffset);
+		AddRibbonRendererData(&UIMeshData->MeshSection, RendererEntry.Emitter->GetMaxParticleCountEstimate(), RendererEntry.EmitterInstance, RibbonRenderer, ScaleFactor, LocationOffset, Alpha01);
 	}
 }
 
@@ -108,7 +108,11 @@ FORCEINLINE FVector2D FastRotate(const FVector2D Vector, float Sin, float Cos)
 		Sin * Vector.X + Cos * Vector.Y);
 }
 
-void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* UIMeshData, int32 MaxParticleCount, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst, UNiagaraSpriteRendererProperties* SpriteRenderer, float ScaleFactor, FVector2D LocationOffset)
+void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* UIMeshData, int32 MaxParticleCount
+	, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
+	, UNiagaraSpriteRendererProperties* SpriteRenderer
+	, float ScaleFactor, FVector2D LocationOffset, float Alpha01
+)
 {
 	FVector ComponentLocation = this->GetRelativeLocation();
 	FVector ComponentScale = this->GetRelativeScale3D();
@@ -238,7 +242,8 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 		const FVector2D ParticleHalfSize = ParticleSize * 0.5;
 
 
-		const FColor ParticleColor = GetParticleColor(ParticleIndex).ToFColor(false);
+		FColor ParticleColor = GetParticleColor(ParticleIndex).ToFColor(false);
+		ParticleColor.A = ParticleColor.A * Alpha01;
 
 
 		float ParticleRotationSin = 0, ParticleRotationCos = 0;
@@ -333,7 +338,11 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 	}
 }
 
-void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* UIMeshData, int32 MaxParticleCount, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst, UNiagaraRibbonRendererProperties* RibbonRenderer, float ScaleFactor, FVector2D LocationOffset)
+void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* UIMeshData, int32 MaxParticleCount
+	, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
+	, UNiagaraRibbonRendererProperties* RibbonRenderer
+	, float ScaleFactor, FVector2D LocationOffset, float Alpha01
+)
 {
 	FVector ComponentLocation = GetRelativeLocation();
 	FVector ComponentScale = GetRelativeScale3D();
@@ -472,7 +481,8 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 		LastToCurrentVector *= 1.f / LastToCurrentSize;
 
 
-		const FColor InitialColor = GetParticleColor(StartDataIndex).ToFColor(false);
+		FColor InitialColor = GetParticleColor(StartDataIndex).ToFColor(false);
+		InitialColor.A = InitialColor.A * Alpha01;
 		const float InitialWidth = GetParticleWidth(StartDataIndex) * ScaleFactor;
 
 		FVector2D InitialPositionArray[2];
@@ -498,6 +508,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 			const float CurrentToNextSize = CurrentToNextVector.Size();
 			CurrentWidth = GetParticleWidth(CurrentDataIndex) * ScaleFactor;
 			FColor CurrentColor = GetParticleColor(CurrentDataIndex).ToFColor(false);
+			CurrentColor.A = CurrentColor.A * Alpha01;
 
 			// Normalize CurrToNextVec
 			CurrentToNextVector *= 1.f / CurrentToNextSize;
@@ -632,7 +643,8 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 			v0to1.ToDirectionAndLength(dir, magnitude);
 			widthDir = FVector2D(dir.Y, -dir.X);//rotate 90 degree
 
-			const FColor InitialColor = GetParticleColor(RibbonIndices[0]).ToFColor(false);
+			FColor InitialColor = GetParticleColor(RibbonIndices[0]).ToFColor(false);
+			InitialColor.A = InitialColor.A * Alpha01;
 			const float lineWidth = GetParticleWidth(0) * 0.5f * ScaleFactor;
 			pos0 = v0 + lineWidth * widthDir;
 			pos1 = v0 - lineWidth * widthDir;
@@ -659,7 +671,8 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 				FVector2D originPoint = GetParticlePosition2D(RibbonIndices[i]);
 				FVector2D originPrevPoint = GetParticlePosition2D(RibbonIndices[i - 1]);
 				FVector2D originNextPoint = GetParticlePosition2D(RibbonIndices[i + 1]);
-				const FColor InitialColor = GetParticleColor(RibbonIndices[i]).ToFColor(false);
+				FColor InitialColor = GetParticleColor(RibbonIndices[i]).ToFColor(false);
+				InitialColor.A = InitialColor.A * Alpha01;
 				const float lineWidth = GetParticleWidth(RibbonIndices[i]) * 0.5f * ScaleFactor;
 				GenerateLinePoint(originPoint, originPrevPoint, originNextPoint, lineWidth, lineWidth, pos0, pos1);
 
@@ -689,7 +702,8 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 			v1to2.ToDirectionAndLength(dir, magnitude);
 			widthDir = FVector2D(dir.Y, -dir.X);//rotate 90 degree
 
-			const FColor InitialColor = GetParticleColor(RibbonIndices[i]).ToFColor(false);
+			FColor InitialColor = GetParticleColor(RibbonIndices[i]).ToFColor(false);
+			InitialColor.A = InitialColor.A * Alpha01;
 			const float lineWidth = GetParticleWidth(RibbonIndices[i]) * 0.5f * ScaleFactor;
 			auto pos0 = vEnd1 + lineWidth * widthDir;
 			auto pos1 = vEnd1 - lineWidth * widthDir;

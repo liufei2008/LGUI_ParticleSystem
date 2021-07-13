@@ -2,7 +2,6 @@
 
 #include "UIParticleSystemRendererItem.h"
 #include "Engine.h"
-#include "Core/LGUIMesh/UIDrawcallMesh.h"
 
 
 #define LOCTEXT_NAMESPACE "UIParticleSystemRendererItem"
@@ -30,17 +29,13 @@ void UUIParticleSystemRendererItem::PostEditChangeProperty(struct FPropertyChang
 }
 #endif
 
-void UUIParticleSystemRendererItem::SetDrawcallMesh(UUIDrawcallMesh* InUIDrawcallMesh)
+void UUIParticleSystemRendererItem::ApplyUIActiveState()
 {
-	UIDrawcallMesh = InUIDrawcallMesh;
 	if (UIDrawcallMesh.IsValid())
 	{
-		UIDrawcallMesh->SetMaterial(0, Material.Get());
+		UIDrawcallMesh->SetUIMeshVisibility(this->IsUIActiveInHierarchy());
 	}
-}
-void UUIParticleSystemRendererItem::SetMaterial(UMaterialInterface* InMaterial)
-{
-	Material = InMaterial;
+	Super::ApplyUIActiveState();
 }
 
 AUIParticleSystemRendererItemActor::AUIParticleSystemRendererItemActor()
