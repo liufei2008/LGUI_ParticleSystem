@@ -1,4 +1,4 @@
-// Copyright 2021 LexLiu. All Rights Reserved.
+﻿// Copyright 2021 LexLiu. All Rights Reserved.
 
 #include "LGUIWorldParticleSystemComponent.h"
 #include "NiagaraRibbonRendererProperties.h"
@@ -80,7 +80,7 @@ TArray<FLGUINiagaraRendererEntry> ULGUIWorldParticleSystemComponent::GetRenderEn
 
 void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(FVector2D Location, FVector2D Scale, float Angle)
 {
-	const FVector NewLocation(Location.X, 0, -Location.Y);
+	const FVector NewLocation(Location.X, 0, Location.Y);
 	const FVector NewScale(Scale.X, 1, Scale.Y);
 	const FRotator NewRotation(0.f, 0.f, FMath::RadiansToDegrees(Angle));
 
@@ -144,7 +144,7 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 	auto GetParticlePosition2D = [&PositionData](int32 Index)
 	{
 		const FVector Position3D = PositionData.GetSafe(Index, FVector::ZeroVector);
-		return FVector2D(Position3D.X, -Position3D.Z);
+		return FVector2D(Position3D.X, Position3D.Z);
 	};
 
 	auto GetParticleDepth = [&PositionData](int32 Index)
@@ -160,7 +160,7 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 	auto GetParticleVelocity2D = [&VelocityData](int32 Index)
 	{
 		const FVector Velocity3D = VelocityData.GetSafe(Index, FVector::ZeroVector);
-		return FVector2D(Velocity3D.X, Velocity3D.Z);
+		return FVector2D(Velocity3D.X, -Velocity3D.Z);
 	};
 
 	auto GetParticleSize = [&SizeData](int32 Index)
@@ -197,13 +197,20 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 		IndexData.SetNumZeroed(IndexCount);
 	}
 #else
+	const int ParticleCountIncrease = 30;//每增加n个粒子才创建新的RenderResource，这样可以减少消耗
+	const int VertexCountIncreaseSize = ParticleCountIncrease * 4;
+	const int IndexCountIncreaseSize = ParticleCountIncrease * 6;
 	if (VertexData.Num() < VertexCount)
 	{
-		VertexData.AddZeroed(VertexCount - VertexData.Num());
+		int ExtraCountNeeded = VertexCount - VertexData.Num();
+		ExtraCountNeeded = ((ExtraCountNeeded / VertexCountIncreaseSize) + 1) * VertexCountIncreaseSize;
+		VertexData.AddZeroed(ExtraCountNeeded);
 	}
 	if (IndexData.Num() < IndexCount)
 	{
-		IndexData.AddZeroed(IndexCount - IndexData.Num());
+		int ExtraCountNeeded = IndexCount - IndexData.Num();
+		ExtraCountNeeded = ((ExtraCountNeeded / IndexCountIncreaseSize) + 1) * IndexCountIncreaseSize;
+		IndexData.AddZeroed(ExtraCountNeeded);
 	}
 	else if (IndexData.Num() > IndexCount)//set not required triangle index to zero
 	{
@@ -222,7 +229,7 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 			ParticlePosition *= FVector2D(ComponentScale.X, ComponentScale.Z);
 			ParticlePosition = ParticlePosition.GetRotated(-ComponentRotation.Pitch);
 			ParticlePosition += LocationOffset;
-			ParticlePosition += FVector2D(ComponentLocation.X, -ComponentLocation.Z) * ScaleFactor;
+			ParticlePosition += FVector2D(ComponentLocation.X, ComponentLocation.Z) * ScaleFactor;
 
 			ParticleSize *= FVector2D(ComponentScale.X, ComponentScale.Z);
 		}
@@ -367,7 +374,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 	auto GetParticlePosition2D = [&PositionData](int32 Index)
 	{
 		const FVector Position3D = PositionData.GetSafe(Index, FVector::ZeroVector);
-		return FVector2D(Position3D.X, -Position3D.Z);
+		return FVector2D(Position3D.X, Position3D.Z);
 	};
 
 	auto GetParticleColor = [&ColorData](int32 Index)
@@ -463,7 +470,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 			LastParticleUIPosition = LastParticleUIPosition.GetRotated(-ComponentRotation.Pitch);
 			LastParticleUIPosition += LocationOffset;
 
-			LastParticleUIPosition += FVector2D(ComponentLocation.X, -ComponentLocation.Z) * ScaleFactor;
+			LastParticleUIPosition += FVector2D(ComponentLocation.X, ComponentLocation.Z) * ScaleFactor;
 		}
 		else
 		{
@@ -528,7 +535,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 				CurrentParticleUIPosition *= FVector2D(ComponentScale.X, ComponentScale.Z);
 				CurrentParticleUIPosition = CurrentParticleUIPosition.GetRotated(-ComponentRotation.Pitch);
 				CurrentParticleUIPosition += LocationOffset;
-				CurrentParticleUIPosition += FVector2D(ComponentLocation.X, -ComponentLocation.Z) * ScaleFactor;
+				CurrentParticleUIPosition += FVector2D(ComponentLocation.X, ComponentLocation.Z) * ScaleFactor;
 			}
 			else
 			{

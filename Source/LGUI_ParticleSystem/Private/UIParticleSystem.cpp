@@ -1,4 +1,4 @@
-// Copyright 2021 LexLiu. All Rights Reserved.
+ï»¿// Copyright 2021 LexLiu. All Rights Reserved.
 
 #include "UIParticleSystem.h"
 #include "Particles/ParticleSpriteEmitter.h"
@@ -26,15 +26,15 @@ void UUIParticleSystem::BeginPlay()
 		GEngine->GameViewport->AddViewportWidgetContent(UpdateAgentWidget.ToSharedRef());
 		UpdateAgentWidget->OnPaintCallbackDelegate.BindUObject(this, &UUIParticleSystem::OnPaintUpdate);
 	}
-	if (IsValid(ParticleSystemTemplate))
+	if (IsValid(ParticleSystem))
 	{
 		CheckParticleSystem();
 	}
 }
 /**
- * ÎªÊ²Ã´·Ö¿ªÁ½´¦¸üÐÂ(TickÖÐ¸üÐÂÍø¸ñ£¬SlateµÄOnPaintÖÐ¶ÁÈ¡Á£×ÓÊý¾Ý)£¿
- * Èç¹û¶¼·Åµ½TickÀï£¬ÄÇÃ´Ribbon¶ÁÈ¡µÄÊý¾ÝÊÇ´íÂÒµÄ£»Èç¹û¶¼·Åµ½OnPaintÀï£¬ÄÇÃ´SpriteµÄUIMesh»áÓÐÄÚ´æÒç³ö£»»¹²»Çå³þÔ­Òò¡£
- * ¹À¼ÆÊÇÓÉÓÚ¶àÏß³ÌÔì³ÉµÄ£¬OnPaintºÍParticleSystemÖÐµÄTickºÍÄ¬ÈÏµÄTick²»ÊÇÔÚÒ»¸öÏß³ÌÀï¡£
+ * ä¸ºä»€ä¹ˆåˆ†å¼€ä¸¤å¤„æ›´æ–°(Tickä¸­æ›´æ–°ç½‘æ ¼ï¼ŒSlateçš„OnPaintä¸­è¯»å–ç²’å­æ•°æ®)ï¼Ÿ
+ * å¦‚æžœéƒ½æ”¾åˆ°Tické‡Œï¼Œé‚£ä¹ˆRibbonè¯»å–çš„æ•°æ®æ˜¯é”™ä¹±çš„ï¼›å¦‚æžœéƒ½æ”¾åˆ°OnPainté‡Œï¼Œé‚£ä¹ˆSpriteçš„UIMeshä¼šæœ‰å†…å­˜æº¢å‡ºï¼›è¿˜ä¸æ¸…æ¥šåŽŸå› ã€‚
+ * ä¼°è®¡æ˜¯ç”±äºŽå¤šçº¿ç¨‹é€ æˆçš„ï¼ŒOnPaintå’ŒParticleSystemä¸­çš„Tickå’Œé»˜è®¤çš„Tickä¸æ˜¯åœ¨ä¸€ä¸ªçº¿ç¨‹é‡Œã€‚
  */ 
 void UUIParticleSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -133,9 +133,9 @@ void UUIParticleSystem::CheckParticleSystem()
 			{
 				auto WorldParticleSystemActor = World->SpawnActor<ALGUIParticleSystemActor>();
 #if WITH_EDITOR
-				WorldParticleSystemActor->SetActorLabel(FString(TEXT("LGUIPaticleSystem")));
+				WorldParticleSystemActor->SetActorLabel(FString(TEXT("LGUI_PS_")) + this->GetOwner()->GetActorLabel());
 #endif
-				WorldParticleComponent = WorldParticleSystemActor->Emit(ParticleSystemTemplate);
+				WorldParticleComponent = WorldParticleSystemActor->Emit(ParticleSystem);
 				WorldParticleComponent->Activate();
 				RenderEntries = WorldParticleComponent->GetRenderEntries();
 				for (int i = 0; i < RenderEntries.Num(); i++)
@@ -145,8 +145,9 @@ void UUIParticleSystem::CheckParticleSystem()
 					RendererItem->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 					RendererItem->SetWidth(0);
 					RendererItem->SetHeight(0);
-					RendererItem->SetMaterial(RenderEntries[i].Material);
 					RendererItem->SetDepth(this->GetDepth() + i);
+					RendererItem->SetMaterial(RenderEntries[i].Material);
+					RendererItem->Manager = this;
 					UIParticleSystemRenderers.Add(RendererItem);
 				}
 			}
@@ -166,6 +167,31 @@ void UUIParticleSystem::SetUseAlpha(bool value)
 	{
 		bUseAlpha = value;
 	}
+}
+
+UMaterialInterface* UUIParticleSystem::GetNormalMaterial(UMaterialInterface* keyMaterial)
+{
+	if (auto valueMaterialPtr = NormalMaterialMap.Find(keyMaterial))
+	{
+		return *valueMaterialPtr;
+	}
+	return nullptr;
+}
+UMaterialInterface* UUIParticleSystem::GetRectClipMaterial(UMaterialInterface* keyMaterial)
+{
+	if (auto valueMaterialPtr = RectClipMaterialMap.Find(keyMaterial))
+	{
+		return *valueMaterialPtr;
+	}
+	return nullptr;
+}
+UMaterialInterface* UUIParticleSystem::GetTextureClipMaterialMap(UMaterialInterface* keyMaterial)
+{
+	if (auto valueMaterialPtr = TextureClipMaterialMap.Find(keyMaterial))
+	{
+		return *valueMaterialPtr;
+	}
+	return nullptr;
 }
 
 

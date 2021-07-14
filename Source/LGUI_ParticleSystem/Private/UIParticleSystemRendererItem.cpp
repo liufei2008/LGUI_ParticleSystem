@@ -4,6 +4,7 @@
 #include "Engine.h"
 #include "Core/LGUIMesh/UIDrawcallMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "UIParticleSystem.h"
 
 
 #define LOCTEXT_NAMESPACE "UIParticleSystemRendererItem"
@@ -41,29 +42,67 @@ void UUIParticleSystemRendererItem::ApplyUIActiveState()
 }
 void UUIParticleSystemRendererItem::SetClipType(ELGUICanvasClipType clipType)
 {
-	if (!IsValid(DynamicMaterial))
+	switch (clipType)
 	{
-		if (Material.IsValid())
+	case ELGUICanvasClipType::None:
+	{
+		bool materialSet = false;
+		if (Manager.IsValid())
 		{
-			DynamicMaterial = UMaterialInstanceDynamic::Create(Material.Get(), this);
-			UIDrawcallMesh->SetMaterial(0, DynamicMaterial);
+			if (auto NormalOriginMaterial = Manager->GetNormalMaterial(Material.Get()))
+			{
+				UIDrawcallMesh->SetMaterial(0, NormalOriginMaterial);
+				materialSet = true;
+			}
 		}
+		if (!materialSet)
+		{
+			UIDrawcallMesh->SetMaterial(0, Material.Get());
+		}
+	}
+	break;
+	case ELGUICanvasClipType::Rect:
+	{
+		if (!IsValid(RectClipDynamicMaterial) && Manager.IsValid())
+		{
+			if (auto RectClipOriginMaterial = Manager->GetRectClipMaterial(Material.Get()))
+			{
+				auto CreatedMat = UMaterialInstanceDynamic::Create(RectClipOriginMaterial, this);
+				UIDrawcallMesh->SetMaterial(0, CreatedMat);
+				RectClipDynamicMaterial = CreatedMat;
+			}
+		}
+	}
+	break;
+	case ELGUICanvasClipType::Texture:
+	{
+		if (!IsValid(TextureClipDynamicMaterial) && Manager.IsValid())
+		{
+			if (auto TextureClipOriginMaterial = Manager->GetRectClipMaterial(Material.Get()))
+			{
+				auto CreatedMat = UMaterialInstanceDynamic::Create(TextureClipOriginMaterial, this);
+				UIDrawcallMesh->SetMaterial(0, CreatedMat);
+				TextureClipDynamicMaterial = CreatedMat;
+			}
+		}
+	}
+	break;
 	}
 }
 void UUIParticleSystemRendererItem::SetRectClipParameter(const FVector4& OffsetAndSize, const FVector4& Feather)
 {
-	if (IsValid(DynamicMaterial))
+	if (IsValid(RectClipDynamicMaterial))
 	{
-		DynamicMaterial->SetVectorParameterValue(FName("RectClipOffsetAndSize"), FLinearColor(OffsetAndSize));
-		DynamicMaterial->SetVectorParameterValue(FName("RectClipFeather"), FLinearColor(Feather));
+		RectClipDynamicMaterial->SetVectorParameterValue(FName("RectClipOffsetAndSize"), FLinearColor(OffsetAndSize));
+		RectClipDynamicMaterial->SetVectorParameterValue(FName("RectClipFeather"), FLinearColor(Feather));
 	}
 }
 void UUIParticleSystemRendererItem::SetTextureClipParameter(UTexture* ClipTex, const FVector4& OffsetAndSize)
 {
-	if (IsValid(DynamicMaterial))
+	if (IsValid(TextureClipDynamicMaterial))
 	{
-		DynamicMaterial->SetTextureParameterValue(FName("ClipTexture"), ClipTex);
-		DynamicMaterial->SetVectorParameterValue(FName("TextureClipOffsetAndSize"), FLinearColor(OffsetAndSize));
+		TextureClipDynamicMaterial->SetTextureParameterValue(FName("ClipTexture"), ClipTex);
+		TextureClipDynamicMaterial->SetVectorParameterValue(FName("TextureClipOffsetAndSize"), FLinearColor(OffsetAndSize));
 	}
 }
 
