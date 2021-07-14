@@ -22,7 +22,9 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason)override;
 private:
 	virtual void ApplyUIActiveState()override;
-	TWeakObjectPtr<class ULGUIWorldParticleSystemComponent> WorldParticleComponent = nullptr;
+	TWeakObjectPtr<class ULGUIWorldParticleSystemComponent> ParticleSystemInstance = nullptr;
+	void ActivateParticleSystem();
+	virtual void UpdateLayoutAndGeometry(bool& parentLayoutChanged, bool shouldUpdateLayout)override;
 
 	void CheckParticleSystem();
 #if WITH_EDITOR
@@ -31,6 +33,7 @@ private:
 	void OnPaintUpdate();
 
 	TArray<struct FLGUINiagaraRendererEntry> RenderEntries;
+	bool RenderEntriesValid = false;
 	UPROPERTY(Transient)
 		TArray<class UUIParticleSystemRendererItem*> UIParticleSystemRenderers;
 	TSharedPtr<class SLGUIParticleSystemUpdateAgentWidget> UpdateAgentWidget = nullptr;
@@ -51,7 +54,7 @@ private:
 		TMap<UMaterialInterface*, UMaterialInterface*> TextureClipMaterialMap;
 public:
 	UFUNCTION(BlueprintCallable, Category = "LGUI")
-		class ULGUIWorldParticleSystemComponent* GetWorldParticleComponent()const { return WorldParticleComponent.Get(); }
+		class ULGUIWorldParticleSystemComponent* GetParticleSystemInstance()const { return ParticleSystemInstance.Get(); }
 	UFUNCTION(BlueprintCallable, Category = "LGUI")
 		UNiagaraSystem* GetParticleSystemTemplate()const { return ParticleSystem; }
 	UFUNCTION(BlueprintCallable, Category = "LGUI")

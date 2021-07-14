@@ -30,7 +30,7 @@ ULGUIWorldParticleSystemComponent* ALGUIParticleSystemActor::Emit(UNiagaraSystem
 
 	auto ParticleComponent = NewObject<ULGUIWorldParticleSystemComponent>(this);
 
-	ParticleComponent->SetAutoActivate(true);
+	ParticleComponent->SetAutoActivate(false);
 	ParticleComponent->SetAsset(NiagaraSystemTemplate);
 	ParticleComponent->SetHiddenInGame(true);
 	ParticleComponent->RegisterComponent();
