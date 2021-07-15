@@ -55,7 +55,7 @@ class LGUI_PARTICLESYSTEM_API ALGUIParticleSystemActor : public AActor
 public:
     ALGUIParticleSystemActor();
 
-	ULGUIWorldParticleSystemComponent* Emit(UNiagaraSystem* NiagaraSystemTemplate);
+	ULGUIWorldParticleSystemComponent* Emit(UNiagaraSystem* NiagaraSystemTemplate, bool AutoActivate);
 	UPROPERTY(VisibleAnywhere, Transient)
 		ULGUIWorldParticleSystemComponent* Niagara;
 };

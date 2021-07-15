@@ -23,10 +23,7 @@ public:
 private:
 	virtual void ApplyUIActiveState()override;
 	TWeakObjectPtr<class ULGUIWorldParticleSystemComponent> ParticleSystemInstance = nullptr;
-	void ActivateParticleSystem();
-	virtual void UpdateLayoutAndGeometry(bool& parentLayoutChanged, bool shouldUpdateLayout)override;
-
-	void CheckParticleSystem();
+	void SetRenderEntries();
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
@@ -38,8 +35,11 @@ private:
 		TArray<class UUIParticleSystemRendererItem*> UIParticleSystemRenderers;
 	TSharedPtr<class SLGUIParticleSystemUpdateAgentWidget> UpdateAgentWidget = nullptr;
 
-	UPROPERTY(EditAnywhere, Category = "LGUI", DisplayName = "ParticleSystem")
+	UPROPERTY(EditAnywhere, Category = "LGUI")
 		UNiagaraSystem* ParticleSystem;
+	/** Auto activate particle system when create it in begin play. */
+	UPROPERTY(EditAnywhere, Category = "LGUI", DisplayName = "Auto Activate")
+		bool bAutoActivateParticleSystem = true;
 	/** Particle color relate to this UI element's alpha. */
 	UPROPERTY(EditAnywhere, Category = "LGUI")
 		bool bUseAlpha = true;
@@ -65,6 +65,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "LGUI")
 		void SetUseAlpha(bool value);
+	UFUNCTION(BlueprintCallable, Category = "LGUI")
+		void SetParticleSystemTemplate(UNiagaraSystem* value);
+	UFUNCTION(BlueprintCallable, Category = "LGUI")
+		void ActivateParticleSystem(bool Reset);
+	UFUNCTION(BlueprintCallable, Category = "LGUI")
+		void DeactivateParticleSystem();
 };
 
 

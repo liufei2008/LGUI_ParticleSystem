@@ -17,7 +17,7 @@ ALGUIParticleSystemActor::ALGUIParticleSystemActor()
 
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 }
-ULGUIWorldParticleSystemComponent* ALGUIParticleSystemActor::Emit(UNiagaraSystem* NiagaraSystemTemplate)
+ULGUIWorldParticleSystemComponent* ALGUIParticleSystemActor::Emit(UNiagaraSystem* NiagaraSystemTemplate, bool AutoActivate)
 {
 	// Find old component
 	TArray<ULGUIWorldParticleSystemComponent*> OldComponents;
@@ -30,7 +30,7 @@ ULGUIWorldParticleSystemComponent* ALGUIParticleSystemActor::Emit(UNiagaraSystem
 
 	auto ParticleComponent = NewObject<ULGUIWorldParticleSystemComponent>(this);
 
-	ParticleComponent->SetAutoActivate(false);
+	ParticleComponent->SetAutoActivate(AutoActivate);
 	ParticleComponent->SetAsset(NiagaraSystemTemplate);
 	ParticleComponent->SetHiddenInGame(true);
 	ParticleComponent->RegisterComponent();

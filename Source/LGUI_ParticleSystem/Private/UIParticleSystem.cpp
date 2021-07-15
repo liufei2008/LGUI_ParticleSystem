@@ -28,28 +28,21 @@ void UUIParticleSystem::BeginPlay()
 	}
 	if (IsValid(ParticleSystem))
 	{
-		CheckParticleSystem();
-	}
-}
-void UUIParticleSystem::UpdateLayoutAndGeometry(bool& parentLayoutChanged, bool shouldUpdateLayout)
-{
-	Super::UpdateLayoutAndGeometry(parentLayoutChanged, shouldUpdateLayout);
-	if (this->IsUIActiveInHierarchy())
-	{
-		if (ParticleSystemInstance.IsValid() && !ParticleSystemInstance->IsActive())
+		auto WorldParticleSystemActor = this->GetWorld()->SpawnActor<ALGUIParticleSystemActor>();
+#if WITH_EDITOR
+		WorldParticleSystemActor->SetActorLabel(FString(TEXT("LGUI_PS_")) + this->GetOwner()->GetActorLabel());
+#endif
+		ParticleSystemInstance = WorldParticleSystemActor->Emit(ParticleSystem, bAutoActivateParticleSystem);
+
+		if (bAutoActivateParticleSystem)
 		{
-			ActivateParticleSystem();
+			SetRenderEntries();
 		}
 	}
 }
-void UUIParticleSystem::ActivateParticleSystem()
-{
-	auto rootUIItem = this->GetRenderCanvas()->GetUIItem();
-	auto rootSpaceLocation = rootUIItem->GetComponentTransform().InverseTransformPosition(this->GetComponentLocation());
-	auto rootSpaceLocation2D = FVector2D(rootSpaceLocation.X, rootSpaceLocation.Y);
-	ParticleSystemInstance->SetTransformationForUIRendering(rootSpaceLocation2D, FVector2D(this->GetRelativeScale3D()), this->GetRelativeRotation().Yaw);
 
-	ParticleSystemInstance->Activate();
+void UUIParticleSystem::SetRenderEntries()
+{
 	if (!RenderEntriesValid)
 	{
 		UWorld* World = this->GetWorld();
@@ -72,6 +65,20 @@ void UUIParticleSystem::ActivateParticleSystem()
 		}
 	}
 }
+void UUIParticleSystem::ActivateParticleSystem(bool Reset)
+{
+	if (ParticleSystemInstance.IsValid())
+	{
+		ParticleSystemInstance->Activate(Reset);
+		SetRenderEntries();
+	}
+}
+
+void UUIParticleSystem::DeactivateParticleSystem()
+{
+	if (ParticleSystemInstance.IsValid())
+		ParticleSystemInstance->Deactivate();
+}
 /**
  * 为什么分开两处更新(Tick中更新网格，Slate的OnPaint中读取粒子数据)？
  * 如果都放到Tick里，那么Ribbon读取的数据是错乱的；如果都放到OnPaint里，那么Sprite的UIMesh会有内存溢出；还不清楚原因。
@@ -81,10 +88,15 @@ void UUIParticleSystem::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	//Update mesh in tick
-	if (IsUIActiveInHierarchy())
+	if (ParticleSystemInstance.IsValid())
 	{
-		if (ParticleSystemInstance.IsValid())
+		//update transform
+		auto rootUIItem = this->GetRenderCanvas()->GetUIItem();
+		auto rootSpaceLocation = rootUIItem->GetComponentTransform().InverseTransformPosition(this->GetComponentLocation());
+		auto rootSpaceLocation2D = FVector2D(rootSpaceLocation.X, rootSpaceLocation.Y);
+		ParticleSystemInstance->SetTransformationForUIRendering(rootSpaceLocation2D, FVector2D(this->GetRelativeScale3D()), this->GetRelativeRotation().Yaw);
+		//update mesh
+		if (IsUIActiveInHierarchy())
 		{
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{
@@ -133,20 +145,6 @@ void UUIParticleSystem::EndPlay(const EEndPlayReason::Type EndPlayReason)
 void UUIParticleSystem::ApplyUIActiveState()
 {
 	Super::ApplyUIActiveState();
-	if (this->IsUIActiveInHierarchy())
-	{
-		if (ParticleSystemInstance.IsValid())
-		{
-			ActivateParticleSystem();
-		}
-	}
-	else
-	{
-		if (ParticleSystemInstance.IsValid())
-		{
-			ParticleSystemInstance->Deactivate();
-		}
-	}
 }
 
 DECLARE_CYCLE_STAT(TEXT("UIParticleSystem RenderToUI"), STAT_UIParticleSystem, STATGROUP_LGUI);
@@ -158,10 +156,6 @@ void UUIParticleSystem::OnPaintUpdate()
 		if (ParticleSystemInstance.IsValid())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_UIParticleSystem);
-			auto rootUIItem = this->GetRenderCanvas()->GetUIItem();
-			auto rootSpaceLocation = rootUIItem->GetComponentTransform().InverseTransformPosition(this->GetComponentLocation());
-			auto rootSpaceLocation2D = FVector2D(rootSpaceLocation.X, rootSpaceLocation.Y);
-			ParticleSystemInstance->SetTransformationForUIRendering(rootSpaceLocation2D, FVector2D(this->GetRelativeScale3D()), this->GetRelativeRotation().Yaw);
 			//auto layoutScale = this->GetRootCanvas()->GetCanvasScale();
 			auto layoutScale = 1.0f;
 			//auto locationOffset = FVector2D(-rootUIItem->GetWidth() * 0.5f, -rootUIItem->GetHeight() * 0.5f);
@@ -173,24 +167,6 @@ void UUIParticleSystem::OnPaintUpdate()
 				{
 					ParticleSystemInstance->RenderUI(UIDrawcallMesh, RenderEntries[i], layoutScale, locationOffset, bUseAlpha ? this->GetFinalAlpha01() : 1.0f);
 				}
-			}
-		}
-	}
-}
-void UUIParticleSystem::CheckParticleSystem()
-{
-	if (!ParticleSystemInstance.IsValid())
-	{
-		if (GetOuter())
-		{
-			UWorld* World = this->GetWorld();
-			if (World)
-			{
-				auto WorldParticleSystemActor = World->SpawnActor<ALGUIParticleSystemActor>();
-#if WITH_EDITOR
-				WorldParticleSystemActor->SetActorLabel(FString(TEXT("LGUI_PS_")) + this->GetOwner()->GetActorLabel());
-#endif
-				ParticleSystemInstance = WorldParticleSystemActor->Emit(ParticleSystem);
 			}
 		}
 	}
@@ -207,6 +183,18 @@ void UUIParticleSystem::SetUseAlpha(bool value)
 	if (bUseAlpha != value)
 	{
 		bUseAlpha = value;
+	}
+}
+void UUIParticleSystem::SetParticleSystemTemplate(UNiagaraSystem* value)
+{
+	if (ParticleSystem != value)
+	{
+		ParticleSystem = value;
+		if (ParticleSystemInstance.IsValid())
+		{
+			ParticleSystemInstance->SetAsset(ParticleSystem);
+			ParticleSystemInstance->ResetSystem();
+		}
 	}
 }
 
