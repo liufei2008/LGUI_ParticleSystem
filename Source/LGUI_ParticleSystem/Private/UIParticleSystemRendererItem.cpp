@@ -32,14 +32,6 @@ void UUIParticleSystemRendererItem::PostEditChangeProperty(struct FPropertyChang
 }
 #endif
 
-void UUIParticleSystemRendererItem::ApplyUIActiveState()
-{
-	if (UIDrawcallMesh.IsValid())
-	{
-		UIDrawcallMesh->SetUIMeshVisibility(this->IsUIActiveInHierarchy());
-	}
-	Super::ApplyUIActiveState();
-}
 void UUIParticleSystemRendererItem::SetClipType(ELGUICanvasClipType clipType)
 {
 	switch (clipType)

@@ -26,8 +26,6 @@ public:
 #endif
 	TWeakObjectPtr<class UUIParticleSystem> Manager = nullptr;
 protected:
-	virtual void ApplyUIActiveState()override;
-
 	virtual void SetClipType(ELGUICanvasClipType clipType)override;
 	virtual void SetRectClipParameter(const FVector4& OffsetAndSize, const FVector4& Feather)override;
 	virtual void SetTextureClipParameter(UTexture* ClipTex, const FVector4& OffsetAndSize)override;

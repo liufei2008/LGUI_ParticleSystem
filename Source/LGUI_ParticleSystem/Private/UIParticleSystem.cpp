@@ -53,6 +53,9 @@ void UUIParticleSystem::SetRenderEntries()
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{
 				auto ParticleSytemRendererItemActor = World->SpawnActor<AUIParticleSystemRendererItemActor>();
+#if WITH_EDITOR
+				ParticleSytemRendererItemActor->SetActorLabel(FString::Printf(TEXT("%s_%d"), *this->GetOwner()->GetActorLabel(), i));
+#endif
 				auto RendererItem = ParticleSytemRendererItemActor->GetUIParticleSystemRendererItem();
 				RendererItem->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 				RendererItem->SetWidth(0);
