@@ -99,7 +99,7 @@ void UUIParticleSystem::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 		auto rootSpaceLocation2D = FVector2D(rootSpaceLocation.X, rootSpaceLocation.Y);
 		ParticleSystemInstance->SetTransformationForUIRendering(rootSpaceLocation2D, FVector2D(this->GetRelativeScale3D()), this->GetRelativeRotation().Yaw);
 		//update mesh
-		if (IsUIActiveInHierarchy())
+		if (GetIsUIActiveInHierarchy())
 		{
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{
@@ -154,7 +154,7 @@ DECLARE_CYCLE_STAT(TEXT("UIParticleSystem RenderToUI"), STAT_UIParticleSystem, S
 void UUIParticleSystem::OnPaintUpdate()
 {
 	//Read particle data in slate OnPaint
-	if (IsUIActiveInHierarchy())
+	if (GetIsUIActiveInHierarchy())
 	{
 		if (ParticleSystemInstance.IsValid())
 		{

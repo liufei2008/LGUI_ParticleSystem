@@ -25,13 +25,16 @@ public:
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
 #endif
 	TWeakObjectPtr<class UUIParticleSystem> Manager = nullptr;
+	virtual void SetMaterial(UMaterialInterface* InMaterial);
 protected:
 	virtual void SetClipType(ELGUICanvasClipType clipType)override;
 	virtual void SetRectClipParameter(const FVector4& OffsetAndSize, const FVector4& Feather)override;
 	virtual void SetTextureClipParameter(UTexture* ClipTex, const FVector4& OffsetAndSize)override;
+	virtual void SetDrawcallMesh(UUIDrawcallMesh* InUIDrawcallMesh)override;
 
 	UPROPERTY(Transient) class UMaterialInstanceDynamic* RectClipDynamicMaterial = nullptr;
 	UPROPERTY(Transient) class UMaterialInstanceDynamic* TextureClipDynamicMaterial = nullptr;
+	TWeakObjectPtr<UMaterialInterface> Material = nullptr;
 };
 
 UCLASS(Transient)

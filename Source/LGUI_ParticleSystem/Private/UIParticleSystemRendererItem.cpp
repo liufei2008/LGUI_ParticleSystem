@@ -32,6 +32,24 @@ void UUIParticleSystemRendererItem::PostEditChangeProperty(struct FPropertyChang
 }
 #endif
 
+void UUIParticleSystemRendererItem::SetMaterial(UMaterialInterface* InMaterial)
+{
+	Material = InMaterial;
+	if (UIDrawcallMesh.IsValid() && Material.IsValid())
+	{
+		UIDrawcallMesh->SetMaterial(0, Material.Get());
+	}
+}
+
+void UUIParticleSystemRendererItem::SetDrawcallMesh(UUIDrawcallMesh* InUIDrawcallMesh)
+{
+	Super::SetDrawcallMesh(InUIDrawcallMesh);
+	if (UIDrawcallMesh.IsValid() && Material.IsValid())
+	{
+		UIDrawcallMesh->SetMaterial(0, Material.Get());
+	}
+}
+
 void UUIParticleSystemRendererItem::SetClipType(ELGUICanvasClipType clipType)
 {
 	switch (clipType)
