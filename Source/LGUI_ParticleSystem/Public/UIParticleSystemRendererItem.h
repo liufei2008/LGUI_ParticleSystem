@@ -30,7 +30,7 @@ protected:
 	virtual void SetClipType(ELGUICanvasClipType clipType)override;
 	virtual void SetRectClipParameter(const FVector4& OffsetAndSize, const FVector4& Feather)override;
 	virtual void SetTextureClipParameter(UTexture* ClipTex, const FVector4& OffsetAndSize)override;
-	virtual void SetDrawcallMesh(UUIDrawcallMesh* InUIDrawcallMesh)override;
+	virtual void SetMeshData(TWeakObjectPtr<ULGUIMeshComponent> InUIMesh, TWeakPtr<FLGUIMeshSection> InUIDrawcallMesh)override;
 
 	UPROPERTY(Transient) class UMaterialInstanceDynamic* RectClipDynamicMaterial = nullptr;
 	UPROPERTY(Transient) class UMaterialInstanceDynamic* TextureClipDynamicMaterial = nullptr;

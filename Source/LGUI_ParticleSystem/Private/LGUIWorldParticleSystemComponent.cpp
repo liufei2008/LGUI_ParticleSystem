@@ -5,7 +5,6 @@
 #include "NiagaraSpriteRendererProperties.h"
 #include "NiagaraRenderer.h"
 #include "Core/LGUIMesh/LGUIMeshComponent.h"
-#include "Core/LGUIMesh/UIDrawcallMesh.h"
 #include "Core/LGUIIndexBuffer.h"
 
 #define MESH_CREATE_OR_UPDATE 0
@@ -87,18 +86,18 @@ void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(FVector2
 	SetRelativeTransform(FTransform(NewRotation, NewLocation, NewScale));
 }
 
-void ULGUIWorldParticleSystemComponent::RenderUI(UUIDrawcallMesh* UIMeshData, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, FVector2D LocationOffset, float Alpha01)
+void ULGUIWorldParticleSystemComponent::RenderUI(TWeakPtr<FLGUIMeshSection> UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, FVector2D LocationOffset, float Alpha01)
 {
 	if (!GetSystemInstance())
 		return;
 
 	if (UNiagaraSpriteRendererProperties* SpriteRenderer = Cast<UNiagaraSpriteRendererProperties>(RendererEntry.RendererProperties))
 	{
-		AddSpriteRendererData(&UIMeshData->MeshSection, RendererEntry.Emitter->GetMaxParticleCountEstimate(), RendererEntry.EmitterInstance, SpriteRenderer, ScaleFactor, LocationOffset, Alpha01);
+		AddSpriteRendererData(UIMeshSection, RendererEntry.Emitter->GetMaxParticleCountEstimate(), RendererEntry.EmitterInstance, SpriteRenderer, ScaleFactor, LocationOffset, Alpha01);
 	}
 	else if (UNiagaraRibbonRendererProperties* RibbonRenderer = Cast<UNiagaraRibbonRendererProperties>(RendererEntry.RendererProperties))
 	{
-		AddRibbonRendererData(&UIMeshData->MeshSection, RendererEntry.Emitter->GetMaxParticleCountEstimate(), RendererEntry.EmitterInstance, RibbonRenderer, ScaleFactor, LocationOffset, Alpha01);
+		AddRibbonRendererData(UIMeshSection, RendererEntry.Emitter->GetMaxParticleCountEstimate(), RendererEntry.EmitterInstance, RibbonRenderer, ScaleFactor, LocationOffset, Alpha01);
 	}
 }
 
@@ -108,7 +107,7 @@ FORCEINLINE FVector2D FastRotate(const FVector2D Vector, float Sin, float Cos)
 		Sin * Vector.X + Cos * Vector.Y);
 }
 
-void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* UIMeshData, int32 MaxParticleCount
+void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
 	, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 	, UNiagaraSpriteRendererProperties* SpriteRenderer
 	, float ScaleFactor, FVector2D LocationOffset, float Alpha01
@@ -185,8 +184,8 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 	
 	int VertexCount = ParticleCount * 4;
 	int IndexCount = ParticleCount * 6;
-	auto& VertexData = UIMeshData->vertices;
-	auto& IndexData = UIMeshData->triangles;
+	auto& VertexData = UIMeshSection.Pin()->vertices;
+	auto& IndexData = UIMeshSection.Pin()->triangles;
 #if MESH_CREATE_OR_UPDATE
 	if (VertexData.Num() != VertexCount)
 	{
@@ -345,7 +344,7 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 	}
 }
 
-void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* UIMeshData, int32 MaxParticleCount
+void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
 	, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 	, UNiagaraRibbonRendererProperties* RibbonRenderer
 	, float ScaleFactor, FVector2D LocationOffset, float Alpha01
@@ -427,8 +426,8 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 	const bool FullIDs = RibbonFullIDData.IsValid();
 	const bool MultiRibbons = FullIDs;
 
-	auto& VertexData = UIMeshData->vertices;
-	auto& IndexData = UIMeshData->triangles;
+	auto& VertexData = UIMeshSection.Pin()->vertices;
+	auto& IndexData = UIMeshSection.Pin()->triangles;
 
 	auto AddRibbonVerts = [&](TArray<int32>& RibbonIndices, int32 CurrentVertexIndex, int32 CurrentIndexIndex, int32& OutVertexCount, int32& OutIndexCount)
 	{

@@ -2,7 +2,7 @@
 
 #include "UIParticleSystemRendererItem.h"
 #include "Engine.h"
-#include "Core/LGUIMesh/UIDrawcallMesh.h"
+#include "Core/LGUIMesh/LGUIMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UIParticleSystem.h"
 
@@ -35,18 +35,18 @@ void UUIParticleSystemRendererItem::PostEditChangeProperty(struct FPropertyChang
 void UUIParticleSystemRendererItem::SetMaterial(UMaterialInterface* InMaterial)
 {
 	Material = InMaterial;
-	if (UIDrawcallMesh.IsValid() && Material.IsValid())
+	if (MeshSection.IsValid() && Material.IsValid())
 	{
-		UIDrawcallMesh->SetMaterial(0, Material.Get());
+		UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), Material.Get());
 	}
 }
 
-void UUIParticleSystemRendererItem::SetDrawcallMesh(UUIDrawcallMesh* InUIDrawcallMesh)
+void UUIParticleSystemRendererItem::SetMeshData(TWeakObjectPtr<ULGUIMeshComponent> InUIMesh, TWeakPtr<FLGUIMeshSection> InMeshSection)
 {
-	Super::SetDrawcallMesh(InUIDrawcallMesh);
-	if (UIDrawcallMesh.IsValid() && Material.IsValid())
+	Super::SetMeshData(InUIMesh, InMeshSection);
+	if (MeshSection.IsValid() && Material.IsValid())
 	{
-		UIDrawcallMesh->SetMaterial(0, Material.Get());
+		UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), Material.Get());
 	}
 }
 
@@ -61,13 +61,13 @@ void UUIParticleSystemRendererItem::SetClipType(ELGUICanvasClipType clipType)
 		{
 			if (auto NormalOriginMaterial = Manager->GetNormalMaterial(Material.Get()))
 			{
-				UIDrawcallMesh->SetMaterial(0, NormalOriginMaterial);
+				UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), NormalOriginMaterial);
 				materialSet = true;
 			}
 		}
 		if (!materialSet)
 		{
-			UIDrawcallMesh->SetMaterial(0, Material.Get());
+			UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), Material.Get());
 		}
 	}
 	break;
@@ -78,7 +78,7 @@ void UUIParticleSystemRendererItem::SetClipType(ELGUICanvasClipType clipType)
 			if (auto RectClipOriginMaterial = Manager->GetRectClipMaterial(Material.Get()))
 			{
 				auto CreatedMat = UMaterialInstanceDynamic::Create(RectClipOriginMaterial, this);
-				UIDrawcallMesh->SetMaterial(0, CreatedMat);
+				UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), CreatedMat);
 				RectClipDynamicMaterial = CreatedMat;
 			}
 		}
@@ -91,7 +91,7 @@ void UUIParticleSystemRendererItem::SetClipType(ELGUICanvasClipType clipType)
 			if (auto TextureClipOriginMaterial = Manager->GetRectClipMaterial(Material.Get()))
 			{
 				auto CreatedMat = UMaterialInstanceDynamic::Create(TextureClipOriginMaterial, this);
-				UIDrawcallMesh->SetMaterial(0, CreatedMat);
+				UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), CreatedMat);
 				TextureClipDynamicMaterial = CreatedMat;
 			}
 		}

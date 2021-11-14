@@ -7,7 +7,6 @@
 #include "LGUIWorldParticleSystemComponent.generated.h"
 
 
-class UUIDrawcallMesh;
 struct FLGUIMeshSection;
 class FNiagaraEmitterInstance;
 class UNiagaraSpriteRendererProperties;
@@ -33,14 +32,14 @@ public:
 
     void SetTransformationForUIRendering(FVector2D Location, FVector2D Scale, float Angle);
 
-    void RenderUI(UUIDrawcallMesh* UIMeshData, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, FVector2D LocationOffset, float Alpha01);
+    void RenderUI(TWeakPtr<FLGUIMeshSection> UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, FVector2D LocationOffset, float Alpha01);
 private:
-    void AddSpriteRendererData(FLGUIMeshSection* UIMeshData, int32 MaxParticleCount
+    void AddSpriteRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
 		, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 		, UNiagaraSpriteRendererProperties* SpriteRenderer
 		, float ScaleFactor, FVector2D LocationOffset, float Alpha01
 	);
-    void AddRibbonRendererData(FLGUIMeshSection* UIMeshData, int32 MaxParticleCount
+    void AddRibbonRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
 		, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 		, UNiagaraRibbonRendererProperties* RibbonRenderer
 		, float ScaleFactor, FVector2D LocationOffset, float Alpha01

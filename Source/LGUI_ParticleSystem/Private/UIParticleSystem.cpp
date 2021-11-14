@@ -5,7 +5,7 @@
 #include "Engine.h"
 #include "LGUIWorldParticleSystemComponent.h"
 #include "UIParticleSystemRendererItem.h"
-#include "Core/LGUIMesh/UIDrawcallMesh.h"
+#include "Core/LGUIMesh/LGUIMeshComponent.h"
 #include "SLGUIParticleSystemUpdateAgentWidget.h"
 
 #define LOCTEXT_NAMESPACE "UIParticleSystem"
@@ -103,10 +103,21 @@ void UUIParticleSystem::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 		{
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{
-				auto UIDrawcallMesh = UIParticleSystemRenderers[i]->GetDrawcallMesh();
-				if (UIDrawcallMesh != nullptr)
+				auto MeshSection = UIParticleSystemRenderers[i]->GetMeshSection();
+				auto UIMesh = UIParticleSystemRenderers[i]->GetUIMesh();
+				if (MeshSection.IsValid())
 				{
-					UIDrawcallMesh->GenerateOrUpdateMesh(false, 1);
+					auto MeshSectionPtr = MeshSection.Pin();
+					if (MeshSectionPtr->prevVertexCount == MeshSectionPtr->vertices.Num() && MeshSectionPtr->prevIndexCount == MeshSectionPtr->triangles.Num())
+					{
+						UIMesh->UpdateMeshSection(MeshSectionPtr, true, 1);
+					}
+					else
+					{
+						MeshSectionPtr->prevVertexCount = MeshSectionPtr->vertices.Num();
+						MeshSectionPtr->prevIndexCount = MeshSectionPtr->triangles.Num();
+						UIMesh->CreateMeshSection(MeshSectionPtr);
+					}
 				}
 			}
 		}
@@ -165,10 +176,10 @@ void UUIParticleSystem::OnPaintUpdate()
 			auto locationOffset = FVector2D::ZeroVector;
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{
-				auto UIDrawcallMesh = UIParticleSystemRenderers[i]->GetDrawcallMesh();
-				if (UIDrawcallMesh != nullptr)
+				auto UIMeshSection = UIParticleSystemRenderers[i]->GetMeshSection();
+				if (UIMeshSection.IsValid())
 				{
-					ParticleSystemInstance->RenderUI(UIDrawcallMesh, RenderEntries[i], layoutScale, locationOffset, bUseAlpha ? this->GetFinalAlpha01() : 1.0f);
+					ParticleSystemInstance->RenderUI(UIMeshSection, RenderEntries[i], layoutScale, locationOffset, bUseAlpha ? this->GetFinalAlpha01() : 1.0f);
 				}
 			}
 		}
