@@ -1,4 +1,4 @@
-// Copyright 2021 LexLiu. All Rights Reserved.
+// Copyright 2021-present LexLiu. All Rights Reserved.
 
 #include "UIParticleSystemRendererItem.h"
 #include "Engine.h"

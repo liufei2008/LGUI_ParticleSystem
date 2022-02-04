@@ -1,4 +1,4 @@
-﻿// Copyright 2021 LexLiu. All Rights Reserved.
+﻿// Copyright 2021-present LexLiu. All Rights Reserved.
 
 #include "LGUIWorldParticleSystemComponent.h"
 #include "NiagaraRibbonRendererProperties.h"
@@ -105,6 +105,10 @@ FORCEINLINE FVector2D FastRotate(const FVector2D Vector, float Sin, float Cos)
 {
 	return FVector2D(Cos * Vector.X - Sin * Vector.Y,
 		Sin * Vector.X + Cos * Vector.Y);
+}
+FORCEINLINE FVector MakePositionVector(const FVector2D& InVector2D)
+{
+	return FVector(0, InVector2D.X, InVector2D.Y);
 }
 
 void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
@@ -324,7 +328,7 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 
 		for (int i = 0; i < 4; ++i)
 		{
-			VertexData[VertexIndex + i].Position = FVector(PositionArray[i] + ParticlePosition, 0);
+			VertexData[VertexIndex + i].Position = MakePositionVector(PositionArray[i] + ParticlePosition);
 			VertexData[VertexIndex + i].Color = ParticleColor;
 			VertexData[VertexIndex + i].TextureCoordinate[0] = TextureCoordinates[i];
 			VertexData[VertexIndex + i].TextureCoordinate[1].X = MaterialData.X;
@@ -497,7 +501,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 
 		for (int i = 0; i < 2; ++i)
 		{
-			VertexData[CurrentVertexIndex + i].Position = FVector(InitialPositionArray[i] + LastParticleUIPosition, 0);
+			VertexData[CurrentVertexIndex + i].Position = MakePositionVector(InitialPositionArray[i] + LastParticleUIPosition);
 			VertexData[CurrentVertexIndex + i].Color = InitialColor;
 			VertexData[CurrentVertexIndex + i].TextureCoordinate[0] = FVector2D(i, 0);
 		}
@@ -573,7 +577,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 
 			for (int i = 0; i < 2; ++i)
 			{
-				VertexData[CurrentVertexIndex + i].Position = FVector(CurrentPositionArray[i] + CurrentParticleUIPosition, 0);
+				VertexData[CurrentVertexIndex + i].Position = MakePositionVector(CurrentPositionArray[i] + CurrentParticleUIPosition);
 				VertexData[CurrentVertexIndex + i].Color = CurrentColor;
 				VertexData[CurrentVertexIndex + i].TextureCoordinate[0] = TextureCoordinates0[i];
 				VertexData[CurrentVertexIndex + i].TextureCoordinate[1] = TextureCoordinates1[i];
@@ -656,13 +660,13 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 			pos1 = v0 - lineWidth * widthDir;
 
 			auto& vert0 = VertexData[0 + CurrentVertexIndex];
-			vert0.Position = FVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y, 0);
+			vert0.Position = MakePositionVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y);
 			vert0.Color = InitialColor;
 			vert0.TextureCoordinate[0] = FVector2D(0, 0);
 			vert0.TextureCoordinate[1] = FVector2D(0, 0);
 
 			auto& vert1 = VertexData[1 + CurrentVertexIndex];
-			vert1.Position = FVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y, 0);
+			vert1.Position = MakePositionVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y);
 			vert1.Color = InitialColor;
 			vert1.TextureCoordinate[0] = FVector2D(1, 0);
 			vert1.TextureCoordinate[1] = FVector2D(1, 0);
@@ -683,13 +687,13 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 				GenerateLinePoint(originPoint, originPrevPoint, originNextPoint, lineWidth, lineWidth, pos0, pos1);
 
 				auto& vert0 = VertexData[i + i + CurrentVertexIndex];
-				vert0.Position = FVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y, 0);
+				vert0.Position = MakePositionVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y);
 				vert0.Color = InitialColor;
 				vert0.TextureCoordinate[0] = FVector2D(0, 0);
 				vert0.TextureCoordinate[1] = FVector2D(0, 0);
 
 				auto& vert1 = VertexData[i + i + 1 + CurrentVertexIndex];
-				vert1.Position = FVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y, 0);
+				vert1.Position = MakePositionVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y);
 				vert1.Color = InitialColor;
 				vert1.TextureCoordinate[0] = FVector2D(1, 0);
 				vert1.TextureCoordinate[1] = FVector2D(1, 0);
@@ -715,13 +719,13 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 			auto pos1 = vEnd1 - lineWidth * widthDir;
 
 			auto& vert0 = VertexData[i + i + CurrentVertexIndex];
-			vert0.Position = FVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y, 0);
+			vert0.Position = MakePositionVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y);
 			vert0.Color = InitialColor;
 			vert0.TextureCoordinate[0] = FVector2D(0, 0);
 			vert0.TextureCoordinate[1] = FVector2D(0, 0);
 
 			auto& vert1 = VertexData[i + i + 1 + CurrentVertexIndex];
-			vert1.Position = FVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y, 0);
+			vert1.Position = MakePositionVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y);
 			vert1.Color = InitialColor;
 			vert1.TextureCoordinate[0] = FVector2D(1, 0);
 			vert1.TextureCoordinate[1] = FVector2D(1, 0);

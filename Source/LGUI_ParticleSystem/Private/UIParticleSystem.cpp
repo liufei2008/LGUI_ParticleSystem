@@ -1,4 +1,4 @@
-﻿// Copyright 2021 LexLiu. All Rights Reserved.
+﻿// Copyright 2021-present LexLiu. All Rights Reserved.
 
 #include "UIParticleSystem.h"
 #include "Particles/ParticleSpriteEmitter.h"
@@ -60,7 +60,6 @@ void UUIParticleSystem::SetRenderEntries()
 				RendererItem->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 				RendererItem->SetWidth(0);
 				RendererItem->SetHeight(0);
-				RendererItem->SetDepth(this->GetDepth() + i);
 				RendererItem->SetMaterial(RenderEntries[i].Material);
 				RendererItem->Manager = this;
 				UIParticleSystemRenderers.Add(RendererItem);
@@ -96,8 +95,10 @@ void UUIParticleSystem::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 		//update transform
 		auto rootUIItem = this->GetRenderCanvas()->GetUIItem();
 		auto rootSpaceLocation = rootUIItem->GetComponentTransform().InverseTransformPosition(this->GetComponentLocation());
-		auto rootSpaceLocation2D = FVector2D(rootSpaceLocation.X, rootSpaceLocation.Y);
-		ParticleSystemInstance->SetTransformationForUIRendering(rootSpaceLocation2D, FVector2D(this->GetRelativeScale3D()), this->GetRelativeRotation().Yaw);
+		auto rootSpaceLocation2D = FVector2D(rootSpaceLocation.Y, rootSpaceLocation.Z);
+		auto scale3D = this->GetRelativeScale3D();
+		auto scale2D = FVector2D(scale3D.Y, scale3D.Z);
+		ParticleSystemInstance->SetTransformationForUIRendering(rootSpaceLocation2D, scale2D, this->GetRelativeRotation().Roll);
 		//update mesh
 		if (GetIsUIActiveInHierarchy())
 		{
@@ -110,13 +111,13 @@ void UUIParticleSystem::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 					auto MeshSectionPtr = MeshSection.Pin();
 					if (MeshSectionPtr->prevVertexCount == MeshSectionPtr->vertices.Num() && MeshSectionPtr->prevIndexCount == MeshSectionPtr->triangles.Num())
 					{
-						UIMesh->UpdateMeshSection(MeshSectionPtr, true, 1);
+						UIMesh->UpdateMeshSectionData(MeshSectionPtr, true, 1);
 					}
 					else
 					{
 						MeshSectionPtr->prevVertexCount = MeshSectionPtr->vertices.Num();
 						MeshSectionPtr->prevIndexCount = MeshSectionPtr->triangles.Num();
-						UIMesh->CreateMeshSection(MeshSectionPtr);
+						UIMesh->CreateMeshSectionData(MeshSectionPtr);
 					}
 				}
 			}
@@ -156,10 +157,6 @@ void UUIParticleSystem::EndPlay(const EEndPlayReason::Type EndPlayReason)
 		}
 	}
 }
-void UUIParticleSystem::ApplyUIActiveState()
-{
-	Super::ApplyUIActiveState();
-}
 
 DECLARE_CYCLE_STAT(TEXT("UIParticleSystem RenderToUI"), STAT_UIParticleSystem, STATGROUP_LGUI);
 void UUIParticleSystem::OnPaintUpdate()
@@ -179,7 +176,7 @@ void UUIParticleSystem::OnPaintUpdate()
 				auto UIMeshSection = UIParticleSystemRenderers[i]->GetMeshSection();
 				if (UIMeshSection.IsValid())
 				{
-					ParticleSystemInstance->RenderUI(UIMeshSection, RenderEntries[i], layoutScale, locationOffset, bUseAlpha ? this->GetFinalAlpha01() : 1.0f);
+					ParticleSystemInstance->RenderUI(UIMeshSection, RenderEntries[i], layoutScale, locationOffset, bUseAlpha ? UIParticleSystemRenderers[i]->GetFinalAlpha01() : 1.0f);
 				}
 			}
 		}

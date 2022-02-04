@@ -1,4 +1,4 @@
-// Copyright 2021 LexLiu. All Rights Reserved.
+// Copyright 2021-present LexLiu. All Rights Reserved.
 
 #pragma once
 
@@ -21,7 +21,6 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason)override;
 private:
-	virtual void ApplyUIActiveState()override;
 	TWeakObjectPtr<class ULGUIWorldParticleSystemComponent> ParticleSystemInstance = nullptr;
 	void SetRenderEntries();
 #if WITH_EDITOR
