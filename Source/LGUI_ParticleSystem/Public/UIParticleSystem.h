@@ -73,7 +73,7 @@ public:
 };
 
 
-UCLASS()
+UCLASS(ClassGroup = LGUI)
 class LGUI_PARTICLESYSTEM_API AUIParticleSystemActor : public AUIBaseActor
 {
 	GENERATED_BODY()

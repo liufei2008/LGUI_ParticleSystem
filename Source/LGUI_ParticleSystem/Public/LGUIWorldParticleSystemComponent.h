@@ -46,13 +46,13 @@ private:
 	);
 };
 
-UCLASS()
-class LGUI_PARTICLESYSTEM_API ALGUIParticleSystemActor : public AActor
+UCLASS(ClassGroup = LGUI, NotPlaceable)
+class LGUI_PARTICLESYSTEM_API ALGUIWorldParticleSystemActor : public AActor
 {
 	GENERATED_BODY()
 
 public:
-    ALGUIParticleSystemActor();
+	ALGUIWorldParticleSystemActor();
 
 	ULGUIWorldParticleSystemComponent* Emit(UNiagaraSystem* NiagaraSystemTemplate, bool AutoActivate);
 	UPROPERTY(VisibleAnywhere, Transient)

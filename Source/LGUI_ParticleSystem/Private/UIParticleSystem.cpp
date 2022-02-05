@@ -28,7 +28,7 @@ void UUIParticleSystem::BeginPlay()
 	}
 	if (IsValid(ParticleSystem))
 	{
-		auto WorldParticleSystemActor = this->GetWorld()->SpawnActor<ALGUIParticleSystemActor>();
+		auto WorldParticleSystemActor = this->GetWorld()->SpawnActor<ALGUIWorldParticleSystemActor>();
 #if WITH_EDITOR
 		WorldParticleSystemActor->SetActorLabel(FString(TEXT("LGUI_PS_")) + this->GetOwner()->GetActorLabel());
 #endif

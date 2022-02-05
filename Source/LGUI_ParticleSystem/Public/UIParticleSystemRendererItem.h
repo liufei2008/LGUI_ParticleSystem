@@ -37,7 +37,7 @@ protected:
 	TWeakObjectPtr<UMaterialInterface> Material = nullptr;
 };
 
-UCLASS(Transient)
+UCLASS(ClassGroup = LGUI, Transient, NotPlaceable)
 class LGUI_PARTICLESYSTEM_API AUIParticleSystemRendererItemActor : public AUIBaseActor
 {
 	GENERATED_BODY()

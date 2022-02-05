@@ -10,13 +10,13 @@
 #define MESH_CREATE_OR_UPDATE 0
 //PRAGMA_DISABLE_OPTIMIZATION
 
-ALGUIParticleSystemActor::ALGUIParticleSystemActor()
+ALGUIWorldParticleSystemActor::ALGUIWorldParticleSystemActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 }
-ULGUIWorldParticleSystemComponent* ALGUIParticleSystemActor::Emit(UNiagaraSystem* NiagaraSystemTemplate, bool AutoActivate)
+ULGUIWorldParticleSystemComponent* ALGUIWorldParticleSystemActor::Emit(UNiagaraSystem* NiagaraSystemTemplate, bool AutoActivate)
 {
 	// Find old component
 	TArray<ULGUIWorldParticleSystemComponent*> OldComponents;
