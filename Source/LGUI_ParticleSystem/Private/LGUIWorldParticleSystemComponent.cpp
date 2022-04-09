@@ -77,7 +77,7 @@ TArray<FLGUINiagaraRendererEntry> ULGUIWorldParticleSystemComponent::GetRenderEn
 	return Renderers;
 }
 
-void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(FVector2D Location, FVector2D Scale, float Angle)
+void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(MyVector2 Location, MyVector2 Scale, float Angle)
 {
 	const FVector NewLocation(Location.X, 0, Location.Y);
 	const FVector NewScale(Scale.X, 1, Scale.Y);
@@ -86,7 +86,7 @@ void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(FVector2
 	SetRelativeTransform(FTransform(NewRotation, NewLocation, NewScale));
 }
 
-void ULGUIWorldParticleSystemComponent::RenderUI(TWeakPtr<FLGUIMeshSection> UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, FVector2D LocationOffset, float Alpha01)
+void ULGUIWorldParticleSystemComponent::RenderUI(TWeakPtr<FLGUIMeshSection> UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, MyVector2 LocationOffset, float Alpha01)
 {
 	if (!GetSystemInstance())
 		return;
@@ -101,20 +101,20 @@ void ULGUIWorldParticleSystemComponent::RenderUI(TWeakPtr<FLGUIMeshSection> UIMe
 	}
 }
 
-FORCEINLINE FVector2D FastRotate(const FVector2D Vector, float Sin, float Cos)
+FORCEINLINE MyVector2 FastRotate(const MyVector2 Vector, float Sin, float Cos)
 {
-	return FVector2D(Cos * Vector.X - Sin * Vector.Y,
+	return MyVector2(Cos * Vector.X - Sin * Vector.Y,
 		Sin * Vector.X + Cos * Vector.Y);
 }
-FORCEINLINE FVector MakePositionVector(const FVector2D& InVector2D)
+FORCEINLINE MyVector3 MakePositionVector(const MyVector2& InVector2D)
 {
-	return FVector(0, InVector2D.X, InVector2D.Y);
+	return MyVector3(0, InVector2D.X, InVector2D.Y);
 }
 
 void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
 	, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 	, UNiagaraSpriteRendererProperties* SpriteRenderer
-	, float ScaleFactor, FVector2D LocationOffset, float Alpha01
+	, float ScaleFactor, MyVector2 LocationOffset, float Alpha01
 )
 {
 	FVector ComponentLocation = this->GetRelativeLocation();
@@ -133,26 +133,26 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 
 	//const float FakeDepthScaler = 1 / WidgetProperties->FakeDepthScaleDistance;
 
-	FVector2D SubImageSize = SpriteRenderer->SubImageSize;
-	FVector2D SubImageDelta = FVector2D::UnitVector / SubImageSize;
+	auto SubImageSize = (MyVector2)SpriteRenderer->SubImageSize;
+	auto SubImageDelta = MyVector2::UnitVector / SubImageSize;
 
-	const auto PositionData = FNiagaraDataSetAccessor<FVector>::CreateReader(DataSet, SpriteRenderer->PositionBinding.GetDataSetBindableVariable().GetName());
+	const auto PositionData = FNiagaraDataSetAccessor<MyVector3>::CreateReader(DataSet, SpriteRenderer->PositionBinding.GetDataSetBindableVariable().GetName());
 	const auto ColorData = FNiagaraDataSetAccessor<FLinearColor>::CreateReader(DataSet, SpriteRenderer->ColorBinding.GetDataSetBindableVariable().GetName());
-	const auto VelocityData = FNiagaraDataSetAccessor<FVector>::CreateReader(DataSet, SpriteRenderer->VelocityBinding.GetDataSetBindableVariable().GetName());
-	const auto SizeData = FNiagaraDataSetAccessor<FVector2D>::CreateReader(DataSet, SpriteRenderer->SpriteSizeBinding.GetDataSetBindableVariable().GetName());
+	const auto VelocityData = FNiagaraDataSetAccessor<MyVector3>::CreateReader(DataSet, SpriteRenderer->VelocityBinding.GetDataSetBindableVariable().GetName());
+	const auto SizeData = FNiagaraDataSetAccessor<MyVector2>::CreateReader(DataSet, SpriteRenderer->SpriteSizeBinding.GetDataSetBindableVariable().GetName());
 	const auto RotationData = FNiagaraDataSetAccessor<float>::CreateReader(DataSet, SpriteRenderer->SpriteRotationBinding.GetDataSetBindableVariable().GetName());
 	const auto SubImageData = FNiagaraDataSetAccessor<float>::CreateReader(DataSet, SpriteRenderer->SubImageIndexBinding.GetDataSetBindableVariable().GetName());
-	const auto DynamicMaterialData = FNiagaraDataSetAccessor<FVector4>::CreateReader(DataSet, SpriteRenderer->DynamicMaterialBinding.GetDataSetBindableVariable().GetName());
+	const auto DynamicMaterialData = FNiagaraDataSetAccessor<MyVector4>::CreateReader(DataSet, SpriteRenderer->DynamicMaterialBinding.GetDataSetBindableVariable().GetName());
 
 	auto GetParticlePosition2D = [&PositionData](int32 Index)
 	{
-		const FVector Position3D = PositionData.GetSafe(Index, FVector::ZeroVector);
-		return FVector2D(Position3D.X, Position3D.Z);
+		const auto Position3D = PositionData.GetSafe(Index, MyVector3::ZeroVector);
+		return MyVector2(Position3D.X, Position3D.Z);
 	};
 
 	auto GetParticleDepth = [&PositionData](int32 Index)
 	{
-		return PositionData.GetSafe(Index, FVector::ZeroVector).Y;
+		return PositionData.GetSafe(Index, MyVector3::ZeroVector).Y;
 	};
 
 	auto GetParticleColor = [&ColorData](int32 Index)
@@ -162,13 +162,13 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 
 	auto GetParticleVelocity2D = [&VelocityData](int32 Index)
 	{
-		const FVector Velocity3D = VelocityData.GetSafe(Index, FVector::ZeroVector);
-		return FVector2D(Velocity3D.X, -Velocity3D.Z);
+		const auto Velocity3D = VelocityData.GetSafe(Index, MyVector3::ZeroVector);
+		return MyVector2(Velocity3D.X, -Velocity3D.Z);
 	};
 
 	auto GetParticleSize = [&SizeData](int32 Index)
 	{
-		return SizeData.GetSafe(Index, FVector2D::ZeroVector);
+		return SizeData.GetSafe(Index, MyVector2::ZeroVector);
 	};
 
 	auto GetParticleRotation = [&RotationData](int32 Index)
@@ -183,7 +183,7 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 
 	auto GetDynamicMaterialData = [&DynamicMaterialData](int32 Index)
 	{
-		return DynamicMaterialData.GetSafe(Index, FVector4(0.f, 0.f, 0.f, 0.f));
+		return DynamicMaterialData.GetSafe(Index, MyVector4(0.f, 0.f, 0.f, 0.f));
 	};
 	
 	int VertexCount = ParticleCount * 4;
@@ -224,17 +224,17 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 	for (int ParticleIndex = 0; ParticleIndex < ParticleCount; ++ParticleIndex)
 	{
 
-		FVector2D ParticlePosition = GetParticlePosition2D(ParticleIndex) * ScaleFactor;
-		FVector2D ParticleSize = GetParticleSize(ParticleIndex) * ScaleFactor;
+		auto ParticlePosition = GetParticlePosition2D(ParticleIndex) * ScaleFactor;
+		auto ParticleSize = GetParticleSize(ParticleIndex) * ScaleFactor;
 
 		if (LocalSpace)
 		{
-			ParticlePosition *= FVector2D(ComponentScale.X, ComponentScale.Z);
+			ParticlePosition *= MyVector2(ComponentScale.X, ComponentScale.Z);
 			ParticlePosition = ParticlePosition.GetRotated(-ComponentRotation.Pitch);
 			ParticlePosition += LocationOffset;
-			ParticlePosition += FVector2D(ComponentLocation.X, ComponentLocation.Z) * ScaleFactor;
+			ParticlePosition += MyVector2(ComponentLocation.X, ComponentLocation.Z) * ScaleFactor;
 
-			ParticleSize *= FVector2D(ComponentScale.X, ComponentScale.Z);
+			ParticleSize *= MyVector2(ComponentScale.X, ComponentScale.Z);
 		}
 		else
 		{
@@ -249,7 +249,7 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 		//}
 
 
-		const FVector2D ParticleHalfSize = ParticleSize * 0.5;
+		const MyVector2 ParticleHalfSize = ParticleSize * 0.5;
 
 
 		FColor ParticleColor = GetParticleColor(ParticleIndex).ToFColor(false);
@@ -260,10 +260,10 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 
 		if (SpriteRenderer->Alignment == ENiagaraSpriteAlignment::VelocityAligned)
 		{
-			const FVector2D ParticleVelocity = GetParticleVelocity2D(ParticleIndex);
+			const MyVector2 ParticleVelocity = GetParticleVelocity2D(ParticleIndex);
 
-			ParticleRotationCos = FVector2D::DotProduct(ParticleVelocity.GetSafeNormal(), FVector2D(0.f, 1.f));
-			const float SinSign = FMath::Sign(FVector2D::DotProduct(ParticleVelocity, FVector2D(1.f, 0.f)));
+			ParticleRotationCos = MyVector2::DotProduct(ParticleVelocity.GetSafeNormal(), MyVector2(0.f, 1.f));
+			const float SinSign = FMath::Sign(MyVector2::DotProduct(ParticleVelocity, MyVector2(1.f, 0.f)));
 
 			if (LocalSpace)
 			{
@@ -287,9 +287,9 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 		if (!FMath::IsFinite(ParticleRotationSin))ParticleRotationSin = 0.0f;
 		if (!FMath::IsFinite(ParticleRotationCos))ParticleRotationCos = 0.0f;
 
-		FVector2D TextureCoordinates[4];
+		MyVector2 TextureCoordinates[4];
 
-		if (SubImageSize != FVector2D(1.f, 1.f))
+		if (SubImageSize != MyVector2(1.f, 1.f))
 		{
 			const float ParticleSubImage = GetParticleSubImage(ParticleIndex);
 			const int Row = (int)FMath::Floor(ParticleSubImage / SubImageSize.X) % (int)SubImageSize.Y;
@@ -300,25 +300,25 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 			const float TopUV = SubImageDelta.Y * Row;
 			const float BottomUV = SubImageDelta.Y * (Row + 1);
 
-			TextureCoordinates[0] = FVector2D(LeftUV, TopUV);
-			TextureCoordinates[1] = FVector2D(Right, TopUV);
-			TextureCoordinates[2] = FVector2D(LeftUV, BottomUV);
-			TextureCoordinates[3] = FVector2D(Right, BottomUV);
+			TextureCoordinates[0] = MyVector2(LeftUV, TopUV);
+			TextureCoordinates[1] = MyVector2(Right, TopUV);
+			TextureCoordinates[2] = MyVector2(LeftUV, BottomUV);
+			TextureCoordinates[3] = MyVector2(Right, BottomUV);
 		}
 		else
 		{
-			TextureCoordinates[0] = FVector2D(0.f, 0.f);
-			TextureCoordinates[1] = FVector2D(1.f, 0.f);
-			TextureCoordinates[2] = FVector2D(0.f, 1.f);
-			TextureCoordinates[3] = FVector2D(1.f, 1.f);
+			TextureCoordinates[0] = MyVector2(0.f, 0.f);
+			TextureCoordinates[1] = MyVector2(1.f, 0.f);
+			TextureCoordinates[2] = MyVector2(0.f, 1.f);
+			TextureCoordinates[3] = MyVector2(1.f, 1.f);
 		}
 
 
-		const FVector4 MaterialData = GetDynamicMaterialData(ParticleIndex);
+		const auto MaterialData = GetDynamicMaterialData(ParticleIndex);
 
-		FVector2D PositionArray[4];
-		PositionArray[0] = FastRotate(FVector2D(-ParticleHalfSize.X, -ParticleHalfSize.Y), ParticleRotationSin, ParticleRotationCos);
-		PositionArray[1] = FastRotate(FVector2D(ParticleHalfSize.X, -ParticleHalfSize.Y), ParticleRotationSin, ParticleRotationCos);
+		MyVector2 PositionArray[4];
+		PositionArray[0] = FastRotate(MyVector2(-ParticleHalfSize.X, -ParticleHalfSize.Y), ParticleRotationSin, ParticleRotationCos);
+		PositionArray[1] = FastRotate(MyVector2(ParticleHalfSize.X, -ParticleHalfSize.Y), ParticleRotationSin, ParticleRotationCos);
 		PositionArray[2] = -PositionArray[1];
 		PositionArray[3] = -PositionArray[0];
 
@@ -351,7 +351,7 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
 	, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 	, UNiagaraRibbonRendererProperties* RibbonRenderer
-	, float ScaleFactor, FVector2D LocationOffset, float Alpha01
+	, float ScaleFactor, MyVector2 LocationOffset, float Alpha01
 )
 {
 	FVector ComponentLocation = GetRelativeLocation();
@@ -376,8 +376,8 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 
 	auto GetParticlePosition2D = [&PositionData](int32 Index)
 	{
-		const FVector Position3D = PositionData.GetSafe(Index, FVector::ZeroVector);
-		return FVector2D(Position3D.X, Position3D.Z);
+		const auto Position3D = PositionData.GetSafe(Index, MyVector3::ZeroVector);
+		return MyVector2(Position3D.X, Position3D.Z);
 	};
 
 	auto GetParticleColor = [&ColorData](int32 Index)
@@ -390,22 +390,22 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 		return RibbonWidthData.GetSafe(Index, 0.f);
 	};
 
-	auto AngleLargerThanPi = [](const FVector2D& A, const FVector2D& B)
+	auto AngleLargerThanPi = [](const MyVector2& A, const MyVector2& B)
 	{
 		float temp = A.X * B.Y - B.X * A.Y;
 		return temp < 0;
 	};
 
-	auto GenerateLinePoint = [AngleLargerThanPi](const FVector2D& InCurrentPoint, const FVector2D& InPrevPoint, const FVector2D& InNextPoint
+	auto GenerateLinePoint = [AngleLargerThanPi](const MyVector2& InCurrentPoint, const MyVector2& InPrevPoint, const MyVector2& InNextPoint
 		, float InLineLeftWidth, float InLineRightWidth
-		, FVector2D& OutPosA, FVector2D& OutPosB
+		, MyVector2& OutPosA, MyVector2& OutPosB
 		)
 	{
-		FVector2D normalizedV1 = (InPrevPoint - InCurrentPoint).GetSafeNormal();
-		FVector2D normalizedV2 = (InNextPoint - InCurrentPoint).GetSafeNormal();
+		MyVector2 normalizedV1 = (InPrevPoint - InCurrentPoint).GetSafeNormal();
+		MyVector2 normalizedV2 = (InNextPoint - InCurrentPoint).GetSafeNormal();
 		if (normalizedV1 == -normalizedV2)
 		{
-			auto itemNormal = FVector2D(normalizedV2.Y, -normalizedV2.X);
+			auto itemNormal = MyVector2(normalizedV2.Y, -normalizedV2.X);
 			OutPosA = InCurrentPoint + InLineLeftWidth * itemNormal;
 			OutPosB = InCurrentPoint - InLineRightWidth * itemNormal;
 		}
@@ -415,9 +415,9 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 			itemNormal.Normalize();
 			if (itemNormal.X == 0 && itemNormal.Y == 0)//wrong normal
 			{
-				itemNormal = FVector2D(normalizedV2.Y, -normalizedV2.X);
+				itemNormal = MyVector2(normalizedV2.Y, -normalizedV2.X);
 			}
-			float prevDotN = FVector2D::DotProduct(normalizedV1, itemNormal);
+			float prevDotN = MyVector2::DotProduct(normalizedV1, itemNormal);
 			float angle = FMath::Acos(prevDotN);
 			float sin = FMath::Sin(angle);
 			itemNormal = AngleLargerThanPi(normalizedV1, normalizedV2) ? -itemNormal : itemNormal;
@@ -457,23 +457,23 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 
 		float TotalDistance = 0.0f;
 
-		FVector2D LastPosition = GetParticlePosition2D(StartDataIndex);
-		FVector2D CurrentPosition = FVector2D::ZeroVector;
+		MyVector2 LastPosition = GetParticlePosition2D(StartDataIndex);
+		MyVector2 CurrentPosition = MyVector2::ZeroVector;
 		float CurrentWidth = 0.f;
-		FVector2D LastToCurrentVector = FVector2D::ZeroVector;
+		MyVector2 LastToCurrentVector = MyVector2::ZeroVector;
 		float LastToCurrentSize = 0.f;
 		float LastU0 = 0.f;
 		float LastU1 = 0.f;
 
-		FVector2D LastParticleUIPosition = LastPosition * ScaleFactor;
+		MyVector2 LastParticleUIPosition = LastPosition * ScaleFactor;
 
 		if (LocalSpace)
 		{
-			LastParticleUIPosition *= FVector2D(ComponentScale.X, ComponentScale.Z);
+			LastParticleUIPosition *= MyVector2(ComponentScale.X, ComponentScale.Z);
 			LastParticleUIPosition = LastParticleUIPosition.GetRotated(-ComponentRotation.Pitch);
 			LastParticleUIPosition += LocationOffset;
 
-			LastParticleUIPosition += FVector2D(ComponentLocation.X, ComponentLocation.Z) * ScaleFactor;
+			LastParticleUIPosition += MyVector2(ComponentLocation.X, ComponentLocation.Z) * ScaleFactor;
 		}
 		else
 		{
@@ -495,7 +495,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 		InitialColor.A = InitialColor.A * Alpha01;
 		const float InitialWidth = GetParticleWidth(StartDataIndex) * ScaleFactor;
 
-		FVector2D InitialPositionArray[2];
+		MyVector2 InitialPositionArray[2];
 		InitialPositionArray[0] = LastToCurrentVector.GetRotated(90.f) * InitialWidth * 0.5f;
 		InitialPositionArray[1] = -InitialPositionArray[0];
 
@@ -503,7 +503,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 		{
 			VertexData[CurrentVertexIndex + i].Position = MakePositionVector(InitialPositionArray[i] + LastParticleUIPosition);
 			VertexData[CurrentVertexIndex + i].Color = InitialColor;
-			VertexData[CurrentVertexIndex + i].TextureCoordinate[0] = FVector2D(i, 0);
+			VertexData[CurrentVertexIndex + i].TextureCoordinate[0] = MyVector2(i, 0);
 		}
 
 		CurrentVertexIndex += 2;
@@ -513,8 +513,8 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 		while (NextIndex < numParticlesInRibbon)
 		{
 			const int32 NextDataIndex = RibbonIndices[NextIndex];
-			const FVector2D NextPosition = GetParticlePosition2D(NextDataIndex);
-			FVector2D CurrentToNextVector = NextPosition - CurrentPosition;
+			const MyVector2 NextPosition = GetParticlePosition2D(NextDataIndex);
+			MyVector2 CurrentToNextVector = NextPosition - CurrentPosition;
 			const float CurrentToNextSize = CurrentToNextVector.Size();
 			CurrentWidth = GetParticleWidth(CurrentDataIndex) * ScaleFactor;
 			FColor CurrentColor = GetParticleColor(CurrentDataIndex).ToFColor(false);
@@ -523,22 +523,22 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 			// Normalize CurrToNextVec
 			CurrentToNextVector *= 1.f / CurrentToNextSize;
 
-			const FVector2D CurrentTangent = (LastToCurrentVector + CurrentToNextVector).GetSafeNormal();
+			const MyVector2 CurrentTangent = (LastToCurrentVector + CurrentToNextVector).GetSafeNormal();
 
 			TotalDistance += LastToCurrentSize;
 
-			FVector2D CurrentPositionArray[2];
+			MyVector2 CurrentPositionArray[2];
 			CurrentPositionArray[0] = CurrentTangent.GetRotated(90.f) * CurrentWidth * 0.5f;
 			CurrentPositionArray[1] = -CurrentPositionArray[0];
 
-			FVector2D CurrentParticleUIPosition = CurrentPosition * ScaleFactor;
+			MyVector2 CurrentParticleUIPosition = CurrentPosition * ScaleFactor;
 
 			if (LocalSpace)
 			{
-				CurrentParticleUIPosition *= FVector2D(ComponentScale.X, ComponentScale.Z);
+				CurrentParticleUIPosition *= MyVector2(ComponentScale.X, ComponentScale.Z);
 				CurrentParticleUIPosition = CurrentParticleUIPosition.GetRotated(-ComponentRotation.Pitch);
 				CurrentParticleUIPosition += LocationOffset;
-				CurrentParticleUIPosition += FVector2D(ComponentLocation.X, ComponentLocation.Z) * ScaleFactor;
+				CurrentParticleUIPosition += MyVector2(ComponentLocation.X, ComponentLocation.Z) * ScaleFactor;
 			}
 			else
 			{
@@ -567,13 +567,13 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 				CurrentU1 = (float)CurrentIndex / (float)numParticlesInRibbon;
 			}
 
-			FVector2D TextureCoordinates0[2];
-			TextureCoordinates0[0] = FVector2D(CurrentU0, 1.f);
-			TextureCoordinates0[1] = FVector2D(CurrentU0, 0.f);
+			MyVector2 TextureCoordinates0[2];
+			TextureCoordinates0[0] = MyVector2(CurrentU0, 1.f);
+			TextureCoordinates0[1] = MyVector2(CurrentU0, 0.f);
 
-			FVector2D TextureCoordinates1[2];
-			TextureCoordinates1[0] = FVector2D(CurrentU1, 1.f);
-			TextureCoordinates1[1] = FVector2D(CurrentU1, 0.f);
+			MyVector2 TextureCoordinates1[2];
+			TextureCoordinates1[0] = MyVector2(CurrentU1, 1.f);
+			TextureCoordinates1[1] = MyVector2(CurrentU1, 0.f);
 
 			for (int i = 0; i < 2; ++i)
 			{
@@ -643,15 +643,15 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 		}
 		//start point
 		{
-			FVector2D pos0, pos1;
-			FVector2D v0 = GetParticlePosition2D(RibbonIndices[0]);
-			FVector2D v0to1 = GetParticlePosition2D(RibbonIndices[1]) - v0;
-			FVector2D dir;
-			FVector2D widthDir;
+			MyVector2 pos0, pos1;
+			MyVector2 v0 = GetParticlePosition2D(RibbonIndices[0]);
+			MyVector2 v0to1 = GetParticlePosition2D(RibbonIndices[1]) - v0;
+			MyVector2 dir;
+			MyVector2 widthDir;
 
 			float magnitude;
 			v0to1.ToDirectionAndLength(dir, magnitude);
-			widthDir = FVector2D(dir.Y, -dir.X);//rotate 90 degree
+			widthDir = MyVector2(dir.Y, -dir.X);//rotate 90 degree
 
 			FColor InitialColor = GetParticleColor(RibbonIndices[0]).ToFColor(false);
 			InitialColor.A = InitialColor.A * Alpha01;
@@ -662,14 +662,14 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 			auto& vert0 = VertexData[0 + CurrentVertexIndex];
 			vert0.Position = MakePositionVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y);
 			vert0.Color = InitialColor;
-			vert0.TextureCoordinate[0] = FVector2D(0, 0);
-			vert0.TextureCoordinate[1] = FVector2D(0, 0);
+			vert0.TextureCoordinate[0] = MyVector2(0, 0);
+			vert0.TextureCoordinate[1] = MyVector2(0, 0);
 
 			auto& vert1 = VertexData[1 + CurrentVertexIndex];
 			vert1.Position = MakePositionVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y);
 			vert1.Color = InitialColor;
-			vert1.TextureCoordinate[0] = FVector2D(1, 0);
-			vert1.TextureCoordinate[1] = FVector2D(1, 0);
+			vert1.TextureCoordinate[0] = MyVector2(1, 0);
+			vert1.TextureCoordinate[1] = MyVector2(1, 0);
 		}
 		//middle points
 		int i = 1;
@@ -677,10 +677,10 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 		{
 			for (; i < pointCount - 1; i++)
 			{
-				FVector2D pos0, pos1;
-				FVector2D originPoint = GetParticlePosition2D(RibbonIndices[i]);
-				FVector2D originPrevPoint = GetParticlePosition2D(RibbonIndices[i - 1]);
-				FVector2D originNextPoint = GetParticlePosition2D(RibbonIndices[i + 1]);
+				MyVector2 pos0, pos1;
+				MyVector2 originPoint = GetParticlePosition2D(RibbonIndices[i]);
+				MyVector2 originPrevPoint = GetParticlePosition2D(RibbonIndices[i - 1]);
+				MyVector2 originNextPoint = GetParticlePosition2D(RibbonIndices[i + 1]);
 				FColor InitialColor = GetParticleColor(RibbonIndices[i]).ToFColor(false);
 				InitialColor.A = InitialColor.A * Alpha01;
 				const float lineWidth = GetParticleWidth(RibbonIndices[i]) * 0.5f * ScaleFactor;
@@ -689,28 +689,28 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 				auto& vert0 = VertexData[i + i + CurrentVertexIndex];
 				vert0.Position = MakePositionVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y);
 				vert0.Color = InitialColor;
-				vert0.TextureCoordinate[0] = FVector2D(0, 0);
-				vert0.TextureCoordinate[1] = FVector2D(0, 0);
+				vert0.TextureCoordinate[0] = MyVector2(0, 0);
+				vert0.TextureCoordinate[1] = MyVector2(0, 0);
 
 				auto& vert1 = VertexData[i + i + 1 + CurrentVertexIndex];
 				vert1.Position = MakePositionVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y);
 				vert1.Color = InitialColor;
-				vert1.TextureCoordinate[0] = FVector2D(1, 0);
-				vert1.TextureCoordinate[1] = FVector2D(1, 0);
+				vert1.TextureCoordinate[0] = MyVector2(1, 0);
+				vert1.TextureCoordinate[1] = MyVector2(1, 0);
 			}
 		}
 		//end point
 		{
-			FVector2D vEnd2 = GetParticlePosition2D(RibbonIndices[pointCount - 2]);
-			FVector2D vEnd1 = GetParticlePosition2D(RibbonIndices[pointCount - 1]);
+			MyVector2 vEnd2 = GetParticlePosition2D(RibbonIndices[pointCount - 2]);
+			MyVector2 vEnd1 = GetParticlePosition2D(RibbonIndices[pointCount - 1]);
 
-			FVector2D v1to2 = vEnd1 - vEnd2;
-			FVector2D dir;
-			FVector2D widthDir;
+			MyVector2 v1to2 = vEnd1 - vEnd2;
+			MyVector2 dir;
+			MyVector2 widthDir;
 
 			float magnitude;
 			v1to2.ToDirectionAndLength(dir, magnitude);
-			widthDir = FVector2D(dir.Y, -dir.X);//rotate 90 degree
+			widthDir = MyVector2(dir.Y, -dir.X);//rotate 90 degree
 
 			FColor InitialColor = GetParticleColor(RibbonIndices[i]).ToFColor(false);
 			InitialColor.A = InitialColor.A * Alpha01;
@@ -721,14 +721,14 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 			auto& vert0 = VertexData[i + i + CurrentVertexIndex];
 			vert0.Position = MakePositionVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y);
 			vert0.Color = InitialColor;
-			vert0.TextureCoordinate[0] = FVector2D(0, 0);
-			vert0.TextureCoordinate[1] = FVector2D(0, 0);
+			vert0.TextureCoordinate[0] = MyVector2(0, 0);
+			vert0.TextureCoordinate[1] = MyVector2(0, 0);
 
 			auto& vert1 = VertexData[i + i + 1 + CurrentVertexIndex];
 			vert1.Position = MakePositionVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y);
 			vert1.Color = InitialColor;
-			vert1.TextureCoordinate[0] = FVector2D(1, 0);
-			vert1.TextureCoordinate[1] = FVector2D(1, 0);
+			vert1.TextureCoordinate[0] = MyVector2(1, 0);
+			vert1.TextureCoordinate[1] = MyVector2(1, 0);
 		}
 #endif
 	};

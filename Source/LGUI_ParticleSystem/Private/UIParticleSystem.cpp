@@ -10,6 +10,16 @@
 
 #define LOCTEXT_NAMESPACE "UIParticleSystem"
 
+#if ENGINE_MAJOR_VERSION >= 5
+typedef FVector3f MyVector3;
+typedef FVector2f MyVector2;
+typedef FVector4f MyVector4;
+#else
+typedef FVector MyVector3;
+typedef FVector2D MyVector2;
+typedef FVector4 MyVector4;
+#endif
+
 UUIParticleSystem::UUIParticleSystem(const FObjectInitializer& ObjectInitializer):Super(ObjectInitializer)
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -95,9 +105,9 @@ void UUIParticleSystem::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 		//update transform
 		auto rootUIItem = this->GetRenderCanvas()->GetUIItem();
 		auto rootSpaceLocation = rootUIItem->GetComponentTransform().InverseTransformPosition(this->GetComponentLocation());
-		auto rootSpaceLocation2D = FVector2D(rootSpaceLocation.Y, rootSpaceLocation.Z);
+		auto rootSpaceLocation2D = MyVector2(rootSpaceLocation.Y, rootSpaceLocation.Z);
 		auto scale3D = this->GetRelativeScale3D();
-		auto scale2D = FVector2D(scale3D.Y, scale3D.Z);
+		auto scale2D = MyVector2(scale3D.Y, scale3D.Z);
 		ParticleSystemInstance->SetTransformationForUIRendering(rootSpaceLocation2D, scale2D, this->GetRelativeRotation().Roll);
 		//update mesh
 		if (GetIsUIActiveInHierarchy())
@@ -169,8 +179,8 @@ void UUIParticleSystem::OnPaintUpdate()
 			SCOPE_CYCLE_COUNTER(STAT_UIParticleSystem);
 			//auto layoutScale = this->GetRootCanvas()->GetCanvasScale();
 			auto layoutScale = 1.0f;
-			//auto locationOffset = FVector2D(-rootUIItem->GetWidth() * 0.5f, -rootUIItem->GetHeight() * 0.5f);
-			auto locationOffset = FVector2D::ZeroVector;
+			//auto locationOffset = MyVector2(-rootUIItem->GetWidth() * 0.5f, -rootUIItem->GetHeight() * 0.5f);
+			auto locationOffset = MyVector2::ZeroVector;
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{
 				auto UIMeshSection = UIParticleSystemRenderers[i]->GetMeshSection();
