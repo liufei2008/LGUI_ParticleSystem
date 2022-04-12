@@ -70,7 +70,12 @@ void UUIParticleSystem::SetRenderEntries()
 				RendererItem->AttachToComponent(this, FAttachmentTransformRules::KeepRelativeTransform);
 				RendererItem->SetWidth(0);
 				RendererItem->SetHeight(0);
-				RendererItem->SetMaterial(RenderEntries[i].Material);
+				UMaterialInterface* Mat = RenderEntries[i].Material;
+				if (auto FoundMatPtr = ReplaceMaterialMap.Find(Mat))
+				{
+					Mat = *FoundMatPtr;
+				}
+				RendererItem->SetMaterial(Mat);
 				RendererItem->Manager = this;
 				UIParticleSystemRenderers.Add(RendererItem);
 			}
@@ -91,6 +96,23 @@ void UUIParticleSystem::DeactivateParticleSystem()
 	if (ParticleSystemInstance.IsValid())
 		ParticleSystemInstance->Deactivate();
 }
+
+void UUIParticleSystem::SetReplaceMaterialMap(const TMap<UMaterialInterface*, UMaterialInterface*>& value)
+{
+	ReplaceMaterialMap = value;
+	for (int i = 0; i < UIParticleSystemRenderers.Num(); i++)
+	{
+		auto RendererItem = UIParticleSystemRenderers[i];
+		UMaterialInterface* Mat = RenderEntries[i].Material;
+		if (auto FoundMatPtr = ReplaceMaterialMap.Find(Mat))
+		{
+			Mat = *FoundMatPtr;
+		}
+		RendererItem->SetMaterial(Mat);
+		UIParticleSystemRenderers.Add(RendererItem);
+	}
+}
+
 /**
  * 为什么分开两处更新(Tick中更新网格，Slate的OnPaint中读取粒子数据)？
  * 如果都放到Tick里，那么Ribbon读取的数据是错乱的；如果都放到OnPaint里，那么Sprite的UIMesh会有内存溢出；还不清楚原因。
@@ -217,31 +239,6 @@ void UUIParticleSystem::SetParticleSystemTemplate(UNiagaraSystem* value)
 			ParticleSystemInstance->ResetSystem();
 		}
 	}
-}
-
-UMaterialInterface* UUIParticleSystem::GetNormalMaterial(UMaterialInterface* keyMaterial)
-{
-	if (auto valueMaterialPtr = NormalMaterialMap.Find(keyMaterial))
-	{
-		return *valueMaterialPtr;
-	}
-	return nullptr;
-}
-UMaterialInterface* UUIParticleSystem::GetRectClipMaterial(UMaterialInterface* keyMaterial)
-{
-	if (auto valueMaterialPtr = RectClipMaterialMap.Find(keyMaterial))
-	{
-		return *valueMaterialPtr;
-	}
-	return nullptr;
-}
-UMaterialInterface* UUIParticleSystem::GetTextureClipMaterialMap(UMaterialInterface* keyMaterial)
-{
-	if (auto valueMaterialPtr = TextureClipMaterialMap.Find(keyMaterial))
-	{
-		return *valueMaterialPtr;
-	}
-	return nullptr;
 }
 
 

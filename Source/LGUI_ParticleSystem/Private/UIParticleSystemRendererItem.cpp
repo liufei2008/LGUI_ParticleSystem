@@ -5,6 +5,7 @@
 #include "Core/LGUIMesh/LGUIMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "UIParticleSystem.h"
+#include "Core/UIDrawcall.h"
 
 
 #define LOCTEXT_NAMESPACE "UIParticleSystemRendererItem"
@@ -34,86 +35,37 @@ void UUIParticleSystemRendererItem::PostEditChangeProperty(struct FPropertyChang
 
 void UUIParticleSystemRendererItem::SetMaterial(UMaterialInterface* InMaterial)
 {
-	Material = InMaterial;
-	if (MeshSection.IsValid() && Material.IsValid())
+	if (Material != InMaterial)
 	{
-		UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), Material.Get());
+		Material = InMaterial;
+		if (RenderCanvas.IsValid())
+		{
+			if (drawcall.IsValid())
+			{
+				drawcall->bMaterialChanged = true;
+			}
+			MarkCanvasUpdate(true, false, false);
+		}
 	}
 }
 
-void UUIParticleSystemRendererItem::SetMeshData(TWeakObjectPtr<ULGUIMeshComponent> InUIMesh, TWeakPtr<FLGUIMeshSection> InMeshSection)
+void UUIParticleSystemRendererItem::OnMeshDataReady()
 {
-	Super::SetMeshData(InUIMesh, InMeshSection);
-	if (MeshSection.IsValid() && Material.IsValid())
+	Super::OnMeshDataReady();
+	if (drawcall->DrawcallMeshSection.IsValid() && Material.IsValid())
 	{
-		UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), Material.Get());
+		drawcall->DrawcallMesh->SetMeshSectionMaterial(drawcall->DrawcallMeshSection.Pin(), Material.Get());
 	}
 }
 
-void UUIParticleSystemRendererItem::SetClipType(ELGUICanvasClipType clipType)
+bool UUIParticleSystemRendererItem::HaveValidData()const
 {
-	switch (clipType)
-	{
-	case ELGUICanvasClipType::None:
-	{
-		bool materialSet = false;
-		if (Manager.IsValid())
-		{
-			if (auto NormalOriginMaterial = Manager->GetNormalMaterial(Material.Get()))
-			{
-				UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), NormalOriginMaterial);
-				materialSet = true;
-			}
-		}
-		if (!materialSet)
-		{
-			UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), Material.Get());
-		}
-	}
-	break;
-	case ELGUICanvasClipType::Rect:
-	{
-		if (!IsValid(RectClipDynamicMaterial) && Manager.IsValid())
-		{
-			if (auto RectClipOriginMaterial = Manager->GetRectClipMaterial(Material.Get()))
-			{
-				auto CreatedMat = UMaterialInstanceDynamic::Create(RectClipOriginMaterial, this);
-				UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), CreatedMat);
-				RectClipDynamicMaterial = CreatedMat;
-			}
-		}
-	}
-	break;
-	case ELGUICanvasClipType::Texture:
-	{
-		if (!IsValid(TextureClipDynamicMaterial) && Manager.IsValid())
-		{
-			if (auto TextureClipOriginMaterial = Manager->GetRectClipMaterial(Material.Get()))
-			{
-				auto CreatedMat = UMaterialInstanceDynamic::Create(TextureClipOriginMaterial, this);
-				UIMesh->SetMeshSectionMaterial(MeshSection.Pin(), CreatedMat);
-				TextureClipDynamicMaterial = CreatedMat;
-			}
-		}
-	}
-	break;
-	}
+	return true;//because this UIParticleSystemRendererItem is created by UIParticleSystem, and UIParticleSystem will always check if have valid data
 }
-void UUIParticleSystemRendererItem::SetRectClipParameter(const FVector4& OffsetAndSize, const FVector4& Feather)
+
+UMaterialInterface* UUIParticleSystemRendererItem::GetMaterial()const
 {
-	if (IsValid(RectClipDynamicMaterial))
-	{
-		RectClipDynamicMaterial->SetVectorParameterValue(FName("RectClipOffsetAndSize"), FLinearColor(OffsetAndSize));
-		RectClipDynamicMaterial->SetVectorParameterValue(FName("RectClipFeather"), FLinearColor(Feather));
-	}
-}
-void UUIParticleSystemRendererItem::SetTextureClipParameter(UTexture* ClipTex, const FVector4& OffsetAndSize)
-{
-	if (IsValid(TextureClipDynamicMaterial))
-	{
-		TextureClipDynamicMaterial->SetTextureParameterValue(FName("ClipTexture"), ClipTex);
-		TextureClipDynamicMaterial->SetVectorParameterValue(FName("TextureClipOffsetAndSize"), FLinearColor(OffsetAndSize));
-	}
+	return Material.Get();
 }
 
 AUIParticleSystemRendererItemActor::AUIParticleSystemRendererItemActor()

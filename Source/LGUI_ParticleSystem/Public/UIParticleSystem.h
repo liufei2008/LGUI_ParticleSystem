@@ -42,15 +42,9 @@ private:
 	/** Particle color relate to this UI element's alpha. */
 	UPROPERTY(EditAnywhere, Category = "LGUI")
 		bool bUseAlpha = true;
-	/** Remap material for LGUI's normally render (without clip), if not assigned then use default material in particle system. */
+	/** Remap material for LGUI to render, if not assigned then use default material in particle system. */
 	UPROPERTY(EditAnywhere, Category = "LGUI")
-		TMap<UMaterialInterface*, UMaterialInterface*> NormalMaterialMap;
-	/** Remap material for LGUI's rect clip. If you don't use rect clip, just ignore this. */
-	UPROPERTY(EditAnywhere, Category = "LGUI")
-		TMap<UMaterialInterface*, UMaterialInterface*> RectClipMaterialMap;
-	/** Remap material for LGUI's texture clip. If you don't use texture clip, just ignore this. */
-	UPROPERTY(EditAnywhere, Category = "LGUI")
-		TMap<UMaterialInterface*, UMaterialInterface*> TextureClipMaterialMap;
+		TMap<UMaterialInterface*, UMaterialInterface*> ReplaceMaterialMap;
 public:
 	UFUNCTION(BlueprintCallable, Category = "LGUI")
 		class ULGUIWorldParticleSystemComponent* GetParticleSystemInstance()const { return ParticleSystemInstance.Get(); }
@@ -58,9 +52,8 @@ public:
 		UNiagaraSystem* GetParticleSystemTemplate()const { return ParticleSystem; }
 	UFUNCTION(BlueprintCallable, Category = "LGUI")
 		bool GetUseAlpha()const { return bUseAlpha; }
-	UMaterialInterface* GetNormalMaterial(UMaterialInterface* keyMaterial);
-	UMaterialInterface* GetRectClipMaterial(UMaterialInterface* keyMaterial);
-	UMaterialInterface* GetTextureClipMaterialMap(UMaterialInterface* keyMaterial);
+	UFUNCTION(BlueprintCallable, Category = "LGUI")
+		const TMap<UMaterialInterface*, UMaterialInterface*>& GetReplaceMaterialMap()const { return ReplaceMaterialMap; }
 
 	UFUNCTION(BlueprintCallable, Category = "LGUI")
 		void SetUseAlpha(bool value);
@@ -70,6 +63,8 @@ public:
 		void ActivateParticleSystem(bool Reset);
 	UFUNCTION(BlueprintCallable, Category = "LGUI")
 		void DeactivateParticleSystem();
+	UFUNCTION(BlueprintCallable, Category = "LGUI")
+		void SetReplaceMaterialMap(const TMap<UMaterialInterface*, UMaterialInterface*>& value);
 };
 
 
