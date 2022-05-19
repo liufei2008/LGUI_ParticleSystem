@@ -7,7 +7,6 @@
 #include "Core/LGUIMesh/LGUIMeshComponent.h"
 #include "Core/LGUIIndexBuffer.h"
 
-#define MESH_CREATE_OR_UPDATE 0
 //PRAGMA_DISABLE_OPTIMIZATION
 
 ALGUIWorldParticleSystemActor::ALGUIWorldParticleSystemActor()
@@ -86,18 +85,18 @@ void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(MyVector
 	SetRelativeTransform(FTransform(NewRotation, NewLocation, NewScale));
 }
 
-void ULGUIWorldParticleSystemComponent::RenderUI(TWeakPtr<FLGUIMeshSection> UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, MyVector2 LocationOffset, float Alpha01)
+void ULGUIWorldParticleSystemComponent::RenderUI(FLGUIMeshSection* UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, MyVector2 LocationOffset, float Alpha01, const int ParticleCountIncreaseAndDecrease)
 {
 	if (!GetSystemInstance())
 		return;
 
 	if (UNiagaraSpriteRendererProperties* SpriteRenderer = Cast<UNiagaraSpriteRendererProperties>(RendererEntry.RendererProperties))
 	{
-		AddSpriteRendererData(UIMeshSection, RendererEntry.Emitter->GetMaxParticleCountEstimate(), RendererEntry.EmitterInstance, SpriteRenderer, ScaleFactor, LocationOffset, Alpha01);
+		AddSpriteRendererData(UIMeshSection, RendererEntry.EmitterInstance, SpriteRenderer, ScaleFactor, LocationOffset, Alpha01, ParticleCountIncreaseAndDecrease);
 	}
 	else if (UNiagaraRibbonRendererProperties* RibbonRenderer = Cast<UNiagaraRibbonRendererProperties>(RendererEntry.RendererProperties))
 	{
-		AddRibbonRendererData(UIMeshSection, RendererEntry.Emitter->GetMaxParticleCountEstimate(), RendererEntry.EmitterInstance, RibbonRenderer, ScaleFactor, LocationOffset, Alpha01);
+		AddRibbonRendererData(UIMeshSection, RendererEntry.EmitterInstance, RibbonRenderer, ScaleFactor, LocationOffset, Alpha01, ParticleCountIncreaseAndDecrease);
 	}
 }
 
@@ -111,10 +110,11 @@ FORCEINLINE MyVector3 MakePositionVector(const MyVector2& InVector2D)
 	return MyVector3(0, InVector2D.X, InVector2D.Y);
 }
 
-void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
+void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* UIMeshSection
 	, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 	, UNiagaraSpriteRendererProperties* SpriteRenderer
 	, float ScaleFactor, MyVector2 LocationOffset, float Alpha01
+	, const int ParticleCountIncreaseAndDecrease
 )
 {
 	FVector ComponentLocation = this->GetRelativeLocation();
@@ -125,6 +125,24 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 	FNiagaraDataSet& DataSet = EmitterInst->GetData();
 	FNiagaraDataBuffer& ParticleData = DataSet.GetCurrentDataChecked();
 	const int32 ParticleCount = ParticleData.GetNumInstances();
+
+	int VertexCount = ParticleCount * 4;
+	int IndexCount = ParticleCount * 6;
+	auto& VertexData = UIMeshSection->vertices;
+	auto& IndexData = UIMeshSection->triangles;
+
+	const int VertexCountIncreaseAndDecrease = ParticleCountIncreaseAndDecrease * 4;
+	const int IndexCountIncreaseAndDecrease = ParticleCountIncreaseAndDecrease * 6;
+
+	int NewTotalVertexCount = ((VertexCount / VertexCountIncreaseAndDecrease) + (VertexCount % VertexCountIncreaseAndDecrease > 0 ? 1 : 0)) * VertexCountIncreaseAndDecrease;
+	VertexData.SetNumZeroed(NewTotalVertexCount);
+
+	int NewTotalIndexCount = ((IndexCount / IndexCountIncreaseAndDecrease) + (IndexCount % IndexCountIncreaseAndDecrease > 0 ? 1 : 0)) * IndexCountIncreaseAndDecrease;
+	IndexData.SetNumZeroed(NewTotalIndexCount);
+	if (IndexData.Num() > IndexCount)//set not required triangle index to zero
+	{
+		FMemory::Memzero(((uint8*)IndexData.GetData()) + IndexCount * sizeof(FLGUIIndexType), (IndexData.Num() - IndexCount) * sizeof(FLGUIIndexType));
+	}
 
 	if (ParticleCount < 1)
 		return;
@@ -185,45 +203,9 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 	{
 		return DynamicMaterialData.GetSafe(Index, MyVector4(0.f, 0.f, 0.f, 0.f));
 	};
-	
-	int VertexCount = ParticleCount * 4;
-	int IndexCount = ParticleCount * 6;
-	auto& VertexData = UIMeshSection.Pin()->vertices;
-	auto& IndexData = UIMeshSection.Pin()->triangles;
-#if MESH_CREATE_OR_UPDATE
-	if (VertexData.Num() != VertexCount)
-	{
-		VertexData.SetNumZeroed(VertexCount);
-	}
-	if (IndexData.Num() != IndexCount)
-	{
-		IndexData.SetNumZeroed(IndexCount);
-	}
-#else
-	const int ParticleCountIncrease = 30;//每增加n个粒子才创建新的RenderResource，这样可以减少消耗
-	const int VertexCountIncreaseSize = ParticleCountIncrease * 4;
-	const int IndexCountIncreaseSize = ParticleCountIncrease * 6;
-	if (VertexData.Num() < VertexCount)
-	{
-		int ExtraCountNeeded = VertexCount - VertexData.Num();
-		ExtraCountNeeded = ((ExtraCountNeeded / VertexCountIncreaseSize) + 1) * VertexCountIncreaseSize;
-		VertexData.AddZeroed(ExtraCountNeeded);
-	}
-	if (IndexData.Num() < IndexCount)
-	{
-		int ExtraCountNeeded = IndexCount - IndexData.Num();
-		ExtraCountNeeded = ((ExtraCountNeeded / IndexCountIncreaseSize) + 1) * IndexCountIncreaseSize;
-		IndexData.AddZeroed(ExtraCountNeeded);
-	}
-	else if (IndexData.Num() > IndexCount)//set not required triangle index to zero
-	{
-		FMemory::Memzero(((uint8*)IndexData.GetData()) + IndexCount * sizeof(FLGUIIndexType), (IndexData.Num() - IndexCount) * sizeof(FLGUIIndexType));
-	}
-#endif
 
 	for (int ParticleIndex = 0; ParticleIndex < ParticleCount; ++ParticleIndex)
 	{
-
 		auto ParticlePosition = GetParticlePosition2D(ParticleIndex) * ScaleFactor;
 		auto ParticleSize = GetParticleSize(ParticleIndex) * ScaleFactor;
 
@@ -284,8 +266,6 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 
 			FMath::SinCos(&ParticleRotationSin, &ParticleRotationCos, FMath::DegreesToRadians(ParticleRotation));
 		}
-		if (!FMath::IsFinite(ParticleRotationSin))ParticleRotationSin = 0.0f;
-		if (!FMath::IsFinite(ParticleRotationCos))ParticleRotationCos = 0.0f;
 
 		MyVector2 TextureCoordinates[4];
 
@@ -348,10 +328,11 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(TWeakPtr<FLGUIMesh
 	}
 }
 
-void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
+void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* UIMeshSection
 	, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 	, UNiagaraRibbonRendererProperties* RibbonRenderer
 	, float ScaleFactor, MyVector2 LocationOffset, float Alpha01
+	, const int ParticleCountIncreaseAndDecrease
 )
 {
 	FVector ComponentLocation = GetRelativeLocation();
@@ -362,9 +343,13 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 	FNiagaraDataBuffer& ParticleData = DataSet.GetCurrentDataChecked();
 	const int32 ParticleCount = ParticleData.GetNumInstances();
 
+	auto& VertexData = UIMeshSection->vertices;
+	auto& IndexData = UIMeshSection->triangles;
+	VertexData.Reset();
+	IndexData.Reset();
+
 	if (ParticleCount < 2)
 		return;
-
 
 	const auto SortKeyReader = RibbonRenderer->SortKeyDataSetAccessor.GetReader(DataSet);
 
@@ -430,28 +415,28 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 	const bool FullIDs = RibbonFullIDData.IsValid();
 	const bool MultiRibbons = FullIDs;
 
-	auto& VertexData = UIMeshSection.Pin()->vertices;
-	auto& IndexData = UIMeshSection.Pin()->triangles;
+	const int VertexCountIncreaseAndDecrease = ParticleCountIncreaseAndDecrease * 2;
+	const int IndexCountIncreaseAndDecrease = ParticleCountIncreaseAndDecrease * 6;
 
-	auto AddRibbonVerts = [&](TArray<int32>& RibbonIndices, int32 CurrentVertexIndex, int32 CurrentIndexIndex, int32& OutVertexCount, int32& OutIndexCount)
+	auto AddRibbonVerts = [&](TArray<int32>& RibbonIndices, int32& InOutVertexCount, int32& InOutIndexCount)
 	{
 		const int32 numParticlesInRibbon = RibbonIndices.Num();
-#if 1
 		if (numParticlesInRibbon < 3)
 			return;
 
 		int VertexCount = (numParticlesInRibbon - 1) * 2;
 		int IndexCount = (numParticlesInRibbon - 2) * 6;
-		if (VertexData.Num() < CurrentVertexIndex + VertexCount)
-		{
-			VertexData.AddZeroed(VertexCount);
-		}
-		if (IndexData.Num() < CurrentIndexIndex + IndexCount)
-		{
-			IndexData.AddZeroed(IndexCount);
-		}
-		OutVertexCount = VertexCount;
-		OutIndexCount = IndexCount;
+
+		auto CurrentVertexIndex = InOutVertexCount;
+		auto CurrentIndexIndex = InOutIndexCount;
+		InOutVertexCount += VertexCount;
+		InOutIndexCount += IndexCount;
+
+		int NewTotalVertexCount = ((InOutVertexCount / VertexCountIncreaseAndDecrease) + (InOutVertexCount % VertexCountIncreaseAndDecrease > 0 ? 1 : 0)) * VertexCountIncreaseAndDecrease;
+		VertexData.SetNumZeroed(NewTotalVertexCount);
+
+		int NewTotalIndexCount = ((InOutIndexCount / IndexCountIncreaseAndDecrease) + (InOutIndexCount % IndexCountIncreaseAndDecrease > 0 ? 1 : 0)) * IndexCountIncreaseAndDecrease;
+		IndexData.SetNumZeroed(NewTotalIndexCount);
 
 		const int32 StartDataIndex = RibbonIndices[0];
 
@@ -606,131 +591,6 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 
 			++NextIndex;
 		}
-#else
-		if (numParticlesInRibbon < 2)
-			return;
-
-		int VertexCount = numParticlesInRibbon * 2;
-		int IndexCount = (numParticlesInRibbon - 1) * 6;
-		if (VertexData.Num() < CurrentVertexIndex + VertexCount)
-		{
-			VertexData.AddZeroed(VertexCount);
-		}
-		if (IndexData.Num() < CurrentIndexIndex + IndexCount)
-		{
-			IndexData.AddZeroed(IndexCount);
-		}
-		OutVertexCount = VertexCount;
-		OutIndexCount = IndexCount;
-
-		int pointCount = numParticlesInRibbon;
-		//triangles
-		{
-			int pointIndex = 0;
-			int vertIndex = 0, triangleIndex = 0;
-			for (int count = pointCount - 1; pointIndex < count; pointIndex++)
-			{
-				vertIndex = pointIndex * 2 + CurrentVertexIndex;
-				triangleIndex = pointIndex * 6 + CurrentIndexIndex;
-				IndexData[triangleIndex] = vertIndex;
-				IndexData[triangleIndex + 1] = vertIndex + 2;
-				IndexData[triangleIndex + 2] = vertIndex + 3;
-
-				IndexData[triangleIndex + 3] = vertIndex;
-				IndexData[triangleIndex + 4] = vertIndex + 3;
-				IndexData[triangleIndex + 5] = vertIndex + 1;
-			}
-		}
-		//start point
-		{
-			MyVector2 pos0, pos1;
-			MyVector2 v0 = GetParticlePosition2D(RibbonIndices[0]);
-			MyVector2 v0to1 = GetParticlePosition2D(RibbonIndices[1]) - v0;
-			MyVector2 dir;
-			MyVector2 widthDir;
-
-			float magnitude;
-			v0to1.ToDirectionAndLength(dir, magnitude);
-			widthDir = MyVector2(dir.Y, -dir.X);//rotate 90 degree
-
-			FColor InitialColor = GetParticleColor(RibbonIndices[0]).ToFColor(false);
-			InitialColor.A = InitialColor.A * Alpha01;
-			const float lineWidth = GetParticleWidth(0) * 0.5f * ScaleFactor;
-			pos0 = v0 + lineWidth * widthDir;
-			pos1 = v0 - lineWidth * widthDir;
-
-			auto& vert0 = VertexData[0 + CurrentVertexIndex];
-			vert0.Position = MakePositionVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y);
-			vert0.Color = InitialColor;
-			vert0.TextureCoordinate[0] = MyVector2(0, 0);
-			vert0.TextureCoordinate[1] = MyVector2(0, 0);
-
-			auto& vert1 = VertexData[1 + CurrentVertexIndex];
-			vert1.Position = MakePositionVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y);
-			vert1.Color = InitialColor;
-			vert1.TextureCoordinate[0] = MyVector2(1, 0);
-			vert1.TextureCoordinate[1] = MyVector2(1, 0);
-		}
-		//middle points
-		int i = 1;
-		if (pointCount >= 3)
-		{
-			for (; i < pointCount - 1; i++)
-			{
-				MyVector2 pos0, pos1;
-				MyVector2 originPoint = GetParticlePosition2D(RibbonIndices[i]);
-				MyVector2 originPrevPoint = GetParticlePosition2D(RibbonIndices[i - 1]);
-				MyVector2 originNextPoint = GetParticlePosition2D(RibbonIndices[i + 1]);
-				FColor InitialColor = GetParticleColor(RibbonIndices[i]).ToFColor(false);
-				InitialColor.A = InitialColor.A * Alpha01;
-				const float lineWidth = GetParticleWidth(RibbonIndices[i]) * 0.5f * ScaleFactor;
-				GenerateLinePoint(originPoint, originPrevPoint, originNextPoint, lineWidth, lineWidth, pos0, pos1);
-
-				auto& vert0 = VertexData[i + i + CurrentVertexIndex];
-				vert0.Position = MakePositionVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y);
-				vert0.Color = InitialColor;
-				vert0.TextureCoordinate[0] = MyVector2(0, 0);
-				vert0.TextureCoordinate[1] = MyVector2(0, 0);
-
-				auto& vert1 = VertexData[i + i + 1 + CurrentVertexIndex];
-				vert1.Position = MakePositionVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y);
-				vert1.Color = InitialColor;
-				vert1.TextureCoordinate[0] = MyVector2(1, 0);
-				vert1.TextureCoordinate[1] = MyVector2(1, 0);
-			}
-		}
-		//end point
-		{
-			MyVector2 vEnd2 = GetParticlePosition2D(RibbonIndices[pointCount - 2]);
-			MyVector2 vEnd1 = GetParticlePosition2D(RibbonIndices[pointCount - 1]);
-
-			MyVector2 v1to2 = vEnd1 - vEnd2;
-			MyVector2 dir;
-			MyVector2 widthDir;
-
-			float magnitude;
-			v1to2.ToDirectionAndLength(dir, magnitude);
-			widthDir = MyVector2(dir.Y, -dir.X);//rotate 90 degree
-
-			FColor InitialColor = GetParticleColor(RibbonIndices[i]).ToFColor(false);
-			InitialColor.A = InitialColor.A * Alpha01;
-			const float lineWidth = GetParticleWidth(RibbonIndices[i]) * 0.5f * ScaleFactor;
-			auto pos0 = vEnd1 + lineWidth * widthDir;
-			auto pos1 = vEnd1 - lineWidth * widthDir;
-
-			auto& vert0 = VertexData[i + i + CurrentVertexIndex];
-			vert0.Position = MakePositionVector(pos0.X + LocationOffset.X, pos0.Y + LocationOffset.Y);
-			vert0.Color = InitialColor;
-			vert0.TextureCoordinate[0] = MyVector2(0, 0);
-			vert0.TextureCoordinate[1] = MyVector2(0, 0);
-
-			auto& vert1 = VertexData[i + i + 1 + CurrentVertexIndex];
-			vert1.Position = MakePositionVector(pos1.X + LocationOffset.X, pos1.Y + LocationOffset.Y);
-			vert1.Color = InitialColor;
-			vert1.TextureCoordinate[0] = MyVector2(1, 0);
-			vert1.TextureCoordinate[1] = MyVector2(1, 0);
-		}
-#endif
 	};
 
 	if (!MultiRibbons)
@@ -742,12 +602,9 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 		}
 
 		SortedIndices.Sort([&SortKeyReader](const int32& A, const int32& B) {	return (SortKeyReader[A] < SortKeyReader[B]); });
-#if MESH_CREATE_OR_UPDATE
-		VertexData.Reset();
-		IndexData.Reset();
-#endif
+
 		int VertexCount = 0, IndexCount = 0;
-		AddRibbonVerts(SortedIndices, 0, 0, VertexCount, IndexCount);
+		AddRibbonVerts(SortedIndices, VertexCount, IndexCount);
 		if (IndexData.Num() > IndexCount)
 		{
 			FMemory::Memzero((void*)(IndexData.GetData() + IndexCount), (IndexData.Num() - IndexCount) * sizeof(FLGUIIndexType));
@@ -767,26 +624,18 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(TWeakPtr<FLGUIMesh
 
 			// Sort the ribbons by ID so that the draw order stays consistent.
 			MultiRibbonSortedIndices.KeySort(TLess<FNiagaraID>());
-#if MESH_CREATE_OR_UPDATE
-			VertexData.Reset();
-			IndexData.Reset();
-#endif
+
 			int VertexCount = 0, IndexCount = 0;
 			for (TPair<FNiagaraID, TArray<int32>>& Pair : MultiRibbonSortedIndices)
 			{
 				TArray<int32>& SortedIndices = Pair.Value;
 				SortedIndices.Sort([&SortKeyReader](const int32& A, const int32& B) {	return (SortKeyReader[A] < SortKeyReader[B]); });
-				int32 ThisVertexCount = 0, ThisIndexCount = 0;
-				AddRibbonVerts(SortedIndices, VertexCount, IndexCount, ThisVertexCount, ThisIndexCount);
-				VertexCount += ThisVertexCount;
-				IndexCount += ThisIndexCount;
+				AddRibbonVerts(SortedIndices, VertexCount, IndexCount);
 			}
-#if !MESH_CREATE_OR_UPDATE
 			if (IndexData.Num() > IndexCount)
 			{
 				FMemory::Memzero(((uint8*)IndexData.GetData()) + IndexCount * sizeof(FLGUIIndexType), (IndexData.Num() - IndexCount) * sizeof(FLGUIIndexType));
 			}
-#endif
 		}
 	}
 }

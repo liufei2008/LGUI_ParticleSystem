@@ -22,8 +22,8 @@ typedef FVector4 MyVector4;
 
 UUIParticleSystem::UUIParticleSystem(const FObjectInitializer& ObjectInitializer):Super(ObjectInitializer)
 {
-	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.bStartWithTickEnabled = true;
+	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bStartWithTickEnabled = false;
 }
 
 void UUIParticleSystem::BeginPlay()
@@ -113,48 +113,11 @@ void UUIParticleSystem::SetReplaceMaterialMap(const TMap<UMaterialInterface*, UM
 	}
 }
 
-/**
- * 为什么分开两处更新(Tick中更新网格，Slate的OnPaint中读取粒子数据)？
- * 如果都放到Tick里，那么Ribbon读取的数据是错乱的；如果都放到OnPaint里，那么Sprite的UIMesh会有内存溢出；还不清楚原因。
- * 估计是由于多线程造成的，OnPaint和ParticleSystem中的Tick和默认的Tick不是在一个线程里。
- */ 
+DECLARE_CYCLE_STAT(TEXT("UIParticleSystem RenderToUI"), STAT_UIParticleSystem, STATGROUP_LGUI);
+
 void UUIParticleSystem::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	if (ParticleSystemInstance.IsValid())
-	{
-		//update transform
-		auto rootUIItem = this->GetRenderCanvas()->GetUIItem();
-		auto rootSpaceLocation = rootUIItem->GetComponentTransform().InverseTransformPosition(this->GetComponentLocation());
-		auto rootSpaceLocation2D = MyVector2(rootSpaceLocation.Y, rootSpaceLocation.Z);
-		auto scale3D = this->GetRelativeScale3D();
-		auto scale2D = MyVector2(scale3D.Y, scale3D.Z);
-		ParticleSystemInstance->SetTransformationForUIRendering(rootSpaceLocation2D, scale2D, this->GetRelativeRotation().Roll);
-		//update mesh
-		if (GetIsUIActiveInHierarchy())
-		{
-			for (int i = 0; i < RenderEntries.Num(); i++)
-			{
-				auto MeshSection = UIParticleSystemRenderers[i]->GetMeshSection();
-				auto UIMesh = UIParticleSystemRenderers[i]->GetUIMesh();
-				if (MeshSection.IsValid())
-				{
-					auto MeshSectionPtr = MeshSection.Pin();
-					if (MeshSectionPtr->prevVertexCount == MeshSectionPtr->vertices.Num() && MeshSectionPtr->prevIndexCount == MeshSectionPtr->triangles.Num())
-					{
-						UIMesh->UpdateMeshSectionData(MeshSectionPtr, true, 1);
-					}
-					else
-					{
-						MeshSectionPtr->prevVertexCount = MeshSectionPtr->vertices.Num();
-						MeshSectionPtr->prevIndexCount = MeshSectionPtr->triangles.Num();
-						UIMesh->CreateMeshSectionData(MeshSectionPtr);
-					}
-				}
-			}
-		}
-	}
 }
 void UUIParticleSystem::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
@@ -190,25 +153,48 @@ void UUIParticleSystem::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	}
 }
 
-DECLARE_CYCLE_STAT(TEXT("UIParticleSystem RenderToUI"), STAT_UIParticleSystem, STATGROUP_LGUI);
 void UUIParticleSystem::OnPaintUpdate()
 {
-	//Read particle data in slate OnPaint
-	if (GetIsUIActiveInHierarchy())
+	if (ParticleSystemInstance.IsValid())
 	{
-		if (ParticleSystemInstance.IsValid())
+		if (GetIsUIActiveInHierarchy())
 		{
 			SCOPE_CYCLE_COUNTER(STAT_UIParticleSystem);
+
 			//auto layoutScale = this->GetRootCanvas()->GetCanvasScale();
 			auto layoutScale = 1.0f;
 			//auto locationOffset = MyVector2(-rootUIItem->GetWidth() * 0.5f, -rootUIItem->GetHeight() * 0.5f);
 			auto locationOffset = MyVector2::ZeroVector;
+
+			//update transform
+			auto rootUIItem = this->GetRenderCanvas()->GetUIItem();
+			auto rootSpaceLocation = rootUIItem->GetComponentTransform().InverseTransformPosition(this->GetComponentLocation());
+			auto rootSpaceLocation2D = MyVector2(rootSpaceLocation.Y, rootSpaceLocation.Z);
+			auto scale3D = this->GetRelativeScale3D();
+			auto scale2D = MyVector2(scale3D.Y, scale3D.Z);
+			ParticleSystemInstance->SetTransformationForUIRendering(rootSpaceLocation2D, scale2D, this->GetRelativeRotation().Roll);
+			const int ParticleCountIncreaseAndDecrease = 50;//only recreate RenderResource when particle count increase or decrease N count, good for performance
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{
 				auto UIMeshSection = UIParticleSystemRenderers[i]->GetMeshSection();
+				auto UIMesh = UIParticleSystemRenderers[i]->GetUIMesh();
 				if (UIMeshSection.IsValid())
 				{
-					ParticleSystemInstance->RenderUI(UIMeshSection, RenderEntries[i], layoutScale, locationOffset, bUseAlpha ? UIParticleSystemRenderers[i]->GetFinalAlpha01() : 1.0f);
+					auto MeshSectionPtr = UIMeshSection.Pin();
+					ParticleSystemInstance->RenderUI(MeshSectionPtr.Get(), RenderEntries[i], layoutScale, locationOffset, bUseAlpha ? UIParticleSystemRenderers[i]->GetFinalAlpha01() : 1.0f, ParticleCountIncreaseAndDecrease);
+					if (MeshSectionPtr->prevVertexCount == MeshSectionPtr->vertices.Num() && MeshSectionPtr->prevIndexCount == MeshSectionPtr->triangles.Num())
+					{
+						if (MeshSectionPtr->prevVertexCount > 0 && MeshSectionPtr->prevIndexCount > 0)
+						{
+							UIMesh->UpdateMeshSectionData(MeshSectionPtr, true, 1);
+						}
+					}
+					else
+					{
+						MeshSectionPtr->prevVertexCount = MeshSectionPtr->vertices.Num();
+						MeshSectionPtr->prevIndexCount = MeshSectionPtr->triangles.Num();
+						UIMesh->CreateMeshSectionData(MeshSectionPtr);
+					}
 				}
 			}
 		}

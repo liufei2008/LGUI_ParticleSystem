@@ -41,17 +41,19 @@ public:
 
     void SetTransformationForUIRendering(MyVector2 Location, MyVector2 Scale, float Angle);
 
-    void RenderUI(TWeakPtr<FLGUIMeshSection> UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, MyVector2 LocationOffset, float Alpha01);
+	void RenderUI(FLGUIMeshSection* UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, MyVector2 LocationOffset, float Alpha01, const int ParticleCountIncreaseAndDecrease);
 private:
-    void AddSpriteRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
+    void AddSpriteRendererData(FLGUIMeshSection* UIMeshSection
 		, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 		, UNiagaraSpriteRendererProperties* SpriteRenderer
 		, float ScaleFactor, MyVector2 LocationOffset, float Alpha01
+		, const int ParticleCountIncreaseAndDecrease
 	);
-    void AddRibbonRendererData(TWeakPtr<FLGUIMeshSection> UIMeshSection, int32 MaxParticleCount
+    void AddRibbonRendererData(FLGUIMeshSection* UIMeshSection
 		, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 		, UNiagaraRibbonRendererProperties* RibbonRenderer
 		, float ScaleFactor, MyVector2 LocationOffset, float Alpha01
+		, const int ParticleCountIncreaseAndDecrease
 	);
 };
 

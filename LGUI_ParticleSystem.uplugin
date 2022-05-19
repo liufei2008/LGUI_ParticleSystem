@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.1",
+	"VersionName": "1.2",
 	"FriendlyName": "Niagara ParticleSystem renderer for LGUI",
 	"Description": "Use Niagara ParticleSystem in LGUI, supports sprite and ribbon data type.",
 	"Category": "UI",
