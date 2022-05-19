@@ -154,7 +154,11 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 	auto SubImageSize = (MyVector2)SpriteRenderer->SubImageSize;
 	auto SubImageDelta = MyVector2::UnitVector / SubImageSize;
 
+#if ENGINE_MAJOR_VERSION >= 5
+	const auto PositionData = FNiagaraDataSetAccessor<FNiagaraPosition>::CreateReader(DataSet, SpriteRenderer->PositionBinding.GetDataSetBindableVariable().GetName());
+#else
 	const auto PositionData = FNiagaraDataSetAccessor<MyVector3>::CreateReader(DataSet, SpriteRenderer->PositionBinding.GetDataSetBindableVariable().GetName());
+#endif
 	const auto ColorData = FNiagaraDataSetAccessor<FLinearColor>::CreateReader(DataSet, SpriteRenderer->ColorBinding.GetDataSetBindableVariable().GetName());
 	const auto VelocityData = FNiagaraDataSetAccessor<MyVector3>::CreateReader(DataSet, SpriteRenderer->VelocityBinding.GetDataSetBindableVariable().GetName());
 	const auto SizeData = FNiagaraDataSetAccessor<MyVector2>::CreateReader(DataSet, SpriteRenderer->SpriteSizeBinding.GetDataSetBindableVariable().GetName());
