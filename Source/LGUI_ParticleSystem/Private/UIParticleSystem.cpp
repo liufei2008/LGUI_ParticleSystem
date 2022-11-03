@@ -2,7 +2,7 @@
 
 #include "UIParticleSystem.h"
 #include "Particles/ParticleSpriteEmitter.h"
-#include "Engine.h"
+#include "CoreMinimal.h"
 #include "LGUIWorldParticleSystemComponent.h"
 #include "UIParticleSystemRendererItem.h"
 #include "Core/LGUIMesh/LGUIMeshComponent.h"
@@ -58,7 +58,7 @@ void UUIParticleSystem::SetRenderEntries()
 		UWorld* World = this->GetWorld();
 		if (World)
 		{
-			RenderEntries = ParticleSystemInstance->GetRenderEntries();
+			ParticleSystemInstance->GetRenderEntries(RenderEntries);
 			RenderEntriesValid = true;
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{

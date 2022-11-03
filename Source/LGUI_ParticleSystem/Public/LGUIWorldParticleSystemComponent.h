@@ -37,7 +37,7 @@ class LGUI_PARTICLESYSTEM_API ULGUIWorldParticleSystemComponent : public UNiagar
 {
     GENERATED_BODY()
 public:
-	TArray<FLGUINiagaraRendererEntry> GetRenderEntries();
+	void GetRenderEntries(TArray<FLGUINiagaraRendererEntry>& Renderers);
 
     void SetTransformationForUIRendering(MyVector2 Location, MyVector2 Scale, float Angle);
 

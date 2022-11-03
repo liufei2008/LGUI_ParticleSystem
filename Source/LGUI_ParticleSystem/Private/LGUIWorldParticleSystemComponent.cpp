@@ -39,13 +39,16 @@ ULGUIWorldParticleSystemComponent* ALGUIWorldParticleSystemActor::Emit(UNiagaraS
 	return ParticleComponent;
 }
 
-TArray<FLGUINiagaraRendererEntry> ULGUIWorldParticleSystemComponent::GetRenderEntries()
+void ULGUIWorldParticleSystemComponent::GetRenderEntries(TArray<FLGUINiagaraRendererEntry>& Renderers)
 {
-	TArray<FLGUINiagaraRendererEntry> Renderers;
+	if (!GetSystemInstance())
+		return;
 
-	for (TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst : GetSystemInstance()->GetEmitters())
+	Renderers.Reset();
+	auto& Emitters = GetSystemInstance()->GetEmitters();
+	for (TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst : Emitters)
 	{
-		if (UNiagaraEmitter* Emitter = EmitterInst->GetCachedEmitter())
+		if (auto Emitter = EmitterInst->GetCachedEmitter())
 		{
 			if (Emitter->SimTarget == ENiagaraSimTarget::CPUSim)
 			{
@@ -72,8 +75,6 @@ TArray<FLGUINiagaraRendererEntry> ULGUIWorldParticleSystemComponent::GetRenderEn
 	}
 
 	Algo::Sort(Renderers, [](FLGUINiagaraRendererEntry& FirstElement, FLGUINiagaraRendererEntry& SecondElement) {return FirstElement.RendererProperties->SortOrderHint < SecondElement.RendererProperties->SortOrderHint; });
-
-	return Renderers;
 }
 
 void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(MyVector2 Location, MyVector2 Scale, float Angle)
