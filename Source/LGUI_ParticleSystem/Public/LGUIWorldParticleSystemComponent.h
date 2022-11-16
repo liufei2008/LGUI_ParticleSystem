@@ -23,12 +23,11 @@ class UNiagaraRibbonRendererProperties;
 
 struct FLGUINiagaraRendererEntry
 {
-	FLGUINiagaraRendererEntry(UNiagaraRendererProperties* PropertiesIn, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInstIn, UNiagaraEmitter* EmitterIn, UMaterialInterface* MaterialIn)
-		: RendererProperties(PropertiesIn), EmitterInstance(EmitterInstIn), Emitter(EmitterIn), Material(MaterialIn) {}
+	FLGUINiagaraRendererEntry(UNiagaraRendererProperties* PropertiesIn, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInstIn, UMaterialInterface* MaterialIn)
+		: RendererProperties(PropertiesIn), EmitterInstance(EmitterInstIn), Material(MaterialIn) {}
 
 	UNiagaraRendererProperties* RendererProperties;
 	TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInstance;
-	UNiagaraEmitter* Emitter;
 	UMaterialInterface* Material;
 };
 
@@ -37,7 +36,7 @@ class LGUI_PARTICLESYSTEM_API ULGUIWorldParticleSystemComponent : public UNiagar
 {
     GENERATED_BODY()
 public:
-	TArray<FLGUINiagaraRendererEntry> GetRenderEntries();
+	void GetRenderEntries(TArray<FLGUINiagaraRendererEntry>& Renderers);
 
     void SetTransformationForUIRendering(MyVector2 Location, MyVector2 Scale, float Angle);
 

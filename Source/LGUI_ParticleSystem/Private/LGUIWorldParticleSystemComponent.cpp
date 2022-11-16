@@ -39,30 +39,34 @@ ULGUIWorldParticleSystemComponent* ALGUIWorldParticleSystemActor::Emit(UNiagaraS
 	return ParticleComponent;
 }
 
-TArray<FLGUINiagaraRendererEntry> ULGUIWorldParticleSystemComponent::GetRenderEntries()
+void ULGUIWorldParticleSystemComponent::GetRenderEntries(TArray<FLGUINiagaraRendererEntry>& Renderers)
 {
-	TArray<FLGUINiagaraRendererEntry> Renderers;
+	if (!GetSystemInstanceController())
+		return;
+	if (!GetSystemInstanceController()->GetSystemInstance_Unsafe())
+		return;
 
-	for (TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst : GetSystemInstance()->GetEmitters())
+	Renderers.Reset();
+	for (TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst : GetSystemInstanceController()->GetSystemInstance_Unsafe()->GetEmitters())
 	{
-		if (UNiagaraEmitter* Emitter = EmitterInst->GetCachedEmitter())
+		if (auto EmitterData = EmitterInst->GetCachedEmitter().GetEmitterData())
 		{
-			if (Emitter->SimTarget == ENiagaraSimTarget::CPUSim)
+			if (EmitterData->SimTarget == ENiagaraSimTarget::CPUSim)
 			{
-				auto& Properties = Emitter->GetRenderers();
+				auto& Properties = EmitterData->GetRenderers();
 
 				for (UNiagaraRendererProperties* Property : Properties)
 				{
-					if (Property->GetIsEnabled() && Property->IsSimTargetSupported(Emitter->SimTarget))
+					if (Property->GetIsEnabled() && Property->IsSimTargetSupported(EmitterData->SimTarget))
 					{
 						if (UNiagaraSpriteRendererProperties* SpriteRenderer = Cast<UNiagaraSpriteRendererProperties>(Property))
 						{
-							FLGUINiagaraRendererEntry NewEntry(Property, EmitterInst, Emitter, SpriteRenderer->Material);
+							FLGUINiagaraRendererEntry NewEntry(Property, EmitterInst, SpriteRenderer->Material);
 							Renderers.Add(NewEntry);
 						}
 						else if (UNiagaraRibbonRendererProperties* RibbonRenderer = Cast<UNiagaraRibbonRendererProperties>(Property))
 						{
-							FLGUINiagaraRendererEntry NewEntry(Property, EmitterInst, Emitter, RibbonRenderer->Material);
+							FLGUINiagaraRendererEntry NewEntry(Property, EmitterInst, RibbonRenderer->Material);
 							Renderers.Add(NewEntry);
 						}
 					}
@@ -72,8 +76,6 @@ TArray<FLGUINiagaraRendererEntry> ULGUIWorldParticleSystemComponent::GetRenderEn
 	}
 
 	Algo::Sort(Renderers, [](FLGUINiagaraRendererEntry& FirstElement, FLGUINiagaraRendererEntry& SecondElement) {return FirstElement.RendererProperties->SortOrderHint < SecondElement.RendererProperties->SortOrderHint; });
-
-	return Renderers;
 }
 
 void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(MyVector2 Location, MyVector2 Scale, float Angle)
@@ -87,7 +89,9 @@ void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(MyVector
 
 void ULGUIWorldParticleSystemComponent::RenderUI(FLGUIMeshSection* UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, MyVector2 LocationOffset, float Alpha01, const int ParticleCountIncreaseAndDecrease)
 {
-	if (!GetSystemInstance())
+	if (!GetSystemInstanceController())
+		return;
+	if (!GetSystemInstanceController()->GetSystemInstance_Unsafe())
 		return;
 
 	if (UNiagaraSpriteRendererProperties* SpriteRenderer = Cast<UNiagaraSpriteRendererProperties>(RendererEntry.RendererProperties))
@@ -147,7 +151,7 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 	if (ParticleCount < 1)
 		return;
 
-	bool LocalSpace = EmitterInst->GetCachedEmitter()->bLocalSpace;
+	bool LocalSpace = EmitterInst->GetCachedEmitter().GetEmitterData()->bLocalSpace;
 
 	//const float FakeDepthScaler = 1 / WidgetProperties->FakeDepthScaleDistance;
 
@@ -415,7 +419,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 		}
 	};
 
-	const bool LocalSpace = EmitterInst->GetCachedEmitter()->bLocalSpace;
+	const bool LocalSpace = EmitterInst->GetCachedEmitter().GetEmitterData()->bLocalSpace;
 	const bool FullIDs = RibbonFullIDData.IsValid();
 	const bool MultiRibbons = FullIDs;
 
