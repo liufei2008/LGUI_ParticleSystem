@@ -41,11 +41,13 @@ ULGUIWorldParticleSystemComponent* ALGUIWorldParticleSystemActor::Emit(UNiagaraS
 
 void ULGUIWorldParticleSystemComponent::GetRenderEntries(TArray<FLGUINiagaraRendererEntry>& Renderers)
 {
-	if (!GetSystemInstance())
+	if (!GetSystemInstanceController())
+		return;
+	if (!GetSystemInstanceController()->GetSystemInstance_Unsafe())
 		return;
 
 	Renderers.Reset();
-	auto& Emitters = GetSystemInstance()->GetEmitters();
+	auto& Emitters = GetSystemInstanceController()->GetSystemInstance_Unsafe()->GetEmitters();
 	for (TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst : Emitters)
 	{
 		if (auto Emitter = EmitterInst->GetCachedEmitter())
@@ -88,7 +90,9 @@ void ULGUIWorldParticleSystemComponent::SetTransformationForUIRendering(MyVector
 
 void ULGUIWorldParticleSystemComponent::RenderUI(FLGUIMeshSection* UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, MyVector2 LocationOffset, float Alpha01, const int ParticleCountIncreaseAndDecrease)
 {
-	if (!GetSystemInstance())
+	if (!GetSystemInstanceController())
+		return;
+	if (!GetSystemInstanceController()->GetSystemInstance_Unsafe())
 		return;
 
 	if (UNiagaraSpriteRendererProperties* SpriteRenderer = Cast<UNiagaraSpriteRendererProperties>(RendererEntry.RendererProperties))
