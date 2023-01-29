@@ -66,6 +66,6 @@ public:
 	ALGUIWorldParticleSystemActor();
 
 	ULGUIWorldParticleSystemComponent* Emit(UNiagaraSystem* NiagaraSystemTemplate, bool AutoActivate);
-	UPROPERTY(VisibleAnywhere, Transient)
+	UPROPERTY(VisibleAnywhere, Transient, Category = "LGUI")
 		ULGUIWorldParticleSystemComponent* Niagara;
 };
