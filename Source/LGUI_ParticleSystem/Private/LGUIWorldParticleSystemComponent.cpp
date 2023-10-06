@@ -5,7 +5,7 @@
 #include "NiagaraSpriteRendererProperties.h"
 #include "NiagaraRenderer.h"
 #include "Core/LGUIMesh/LGUIMeshComponent.h"
-#include "Core/LGUIIndexBuffer.h"
+#include "Core/LGUIMeshIndex.h"
 
 //PRAGMA_DISABLE_OPTIMIZATION
 
@@ -145,7 +145,7 @@ void ULGUIWorldParticleSystemComponent::AddSpriteRendererData(FLGUIMeshSection* 
 	IndexData.SetNumZeroed(NewTotalIndexCount);
 	if (IndexData.Num() > IndexCount)//set not required triangle index to zero
 	{
-		FMemory::Memzero(((uint8*)IndexData.GetData()) + IndexCount * sizeof(FLGUIIndexType), (IndexData.Num() - IndexCount) * sizeof(FLGUIIndexType));
+		FMemory::Memzero(((uint8*)IndexData.GetData()) + IndexCount * sizeof(FLGUIMeshIndexBufferType), (IndexData.Num() - IndexCount) * sizeof(FLGUIMeshIndexBufferType));
 	}
 
 	if (ParticleCount < 1)
@@ -615,7 +615,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 		AddRibbonVerts(SortedIndices, VertexCount, IndexCount);
 		if (IndexData.Num() > IndexCount)
 		{
-			FMemory::Memzero((void*)(IndexData.GetData() + IndexCount), (IndexData.Num() - IndexCount) * sizeof(FLGUIIndexType));
+			FMemory::Memzero((void*)(IndexData.GetData() + IndexCount), (IndexData.Num() - IndexCount) * sizeof(FLGUIMeshIndexBufferType));
 		}
 	}
 	else
@@ -642,7 +642,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 			}
 			if (IndexData.Num() > IndexCount)
 			{
-				FMemory::Memzero(((uint8*)IndexData.GetData()) + IndexCount * sizeof(FLGUIIndexType), (IndexData.Num() - IndexCount) * sizeof(FLGUIIndexType));
+				FMemory::Memzero(((uint8*)IndexData.GetData()) + IndexCount * sizeof(FLGUIMeshIndexBufferType), (IndexData.Num() - IndexCount) * sizeof(FLGUIMeshIndexBufferType));
 			}
 		}
 	}

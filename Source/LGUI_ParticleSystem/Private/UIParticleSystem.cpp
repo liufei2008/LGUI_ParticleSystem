@@ -176,24 +176,24 @@ void UUIParticleSystem::OnPaintUpdate()
 			const int ParticleCountIncreaseAndDecrease = 50;//only recreate RenderResource when particle count increase or decrease N count, good for performance
 			for (int i = 0; i < RenderEntries.Num(); i++)
 			{
-				auto UIMeshSection = UIParticleSystemRenderers[i]->GetMeshSection();
+				auto UIRenderSection = UIParticleSystemRenderers[i]->GetMeshSection();
 				auto UIMesh = UIParticleSystemRenderers[i]->GetUIMesh();
-				if (UIMeshSection.IsValid())
+				if (UIRenderSection.IsValid())
 				{
-					auto MeshSectionPtr = UIMeshSection.Pin();
+					auto MeshSectionPtr = StaticCastSharedPtr<FLGUIMeshSection>(UIRenderSection.Pin());
 					ParticleSystemInstance->RenderUI(MeshSectionPtr.Get(), RenderEntries[i], layoutScale, locationOffset, bUseAlpha ? UIParticleSystemRenderers[i]->GetFinalAlpha01() : 1.0f, ParticleCountIncreaseAndDecrease);
 					if (MeshSectionPtr->prevVertexCount == MeshSectionPtr->vertices.Num() && MeshSectionPtr->prevIndexCount == MeshSectionPtr->triangles.Num())
 					{
 						if (MeshSectionPtr->prevVertexCount > 0 && MeshSectionPtr->prevIndexCount > 0)
 						{
-							UIMesh->UpdateMeshSectionData(MeshSectionPtr, true, 1);
+							UIMesh->UpdateMeshSectionRenderData(MeshSectionPtr, true, 1);
 						}
 					}
 					else
 					{
 						MeshSectionPtr->prevVertexCount = MeshSectionPtr->vertices.Num();
 						MeshSectionPtr->prevIndexCount = MeshSectionPtr->triangles.Num();
-						UIMesh->CreateMeshSectionData(MeshSectionPtr);
+						UIMesh->CreateRenderSectionRenderData(MeshSectionPtr);
 					}
 				}
 			}

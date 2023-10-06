@@ -52,9 +52,9 @@ void UUIParticleSystemRendererItem::SetMaterial(UMaterialInterface* InMaterial)
 void UUIParticleSystemRendererItem::OnMeshDataReady()
 {
 	Super::OnMeshDataReady();
-	if (drawcall->DrawcallMeshSection.IsValid() && Material.IsValid())
+	if (drawcall->DrawcallRenderSection.IsValid() && Material.IsValid())
 	{
-		drawcall->DrawcallMesh->SetMeshSectionMaterial(drawcall->DrawcallMeshSection.Pin(), Material.Get());
+		drawcall->DrawcallMesh->SetMeshSectionMaterial(drawcall->DrawcallRenderSection.Pin(), Material.Get());
 	}
 }
 
