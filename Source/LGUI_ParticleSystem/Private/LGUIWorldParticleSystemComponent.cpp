@@ -359,7 +359,25 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 	if (ParticleCount < 2)
 		return;
 
-	const auto SortKeyReader = RibbonRenderer->SortKeyDataSetAccessor.GetReader(DataSet);
+	const auto RibbonLinkOrderFloatData = RibbonRenderer->RibbonLinkOrderFloatAccessor.GetReader(DataSet);
+	const auto RibbonLinkOrderInt32Data = RibbonRenderer->RibbonLinkOrderInt32Accessor.GetReader(DataSet);
+
+	if (!ensureMsgf(RibbonLinkOrderFloatData.IsValid() || RibbonLinkOrderInt32Data.IsValid(), TEXT("Invalid Sort Key Reader encrountered while rendering ribbon particles. This can happen if the particle is missing \"Particle State\" module.")))
+	{
+		return;
+	}
+
+	auto RibbonLinkOrderSort = [&RibbonLinkOrderFloatData, &RibbonLinkOrderInt32Data](TArray<int32>& Container)
+		{
+			if (RibbonLinkOrderFloatData.IsValid())
+			{
+				Container.Sort([&RibbonLinkOrderFloatData](const uint32& A, const uint32& B) { return RibbonLinkOrderFloatData[A] < RibbonLinkOrderFloatData[B]; });
+			}
+			else
+			{
+				Container.Sort([&RibbonLinkOrderInt32Data](const uint32& A, const uint32& B) { return RibbonLinkOrderInt32Data[A] > RibbonLinkOrderInt32Data[B]; });
+			}
+		};
 
 	const auto PositionData = RibbonRenderer->PositionDataSetAccessor.GetReader(DataSet);
 	const auto ColorData = FNiagaraDataSetAccessor<FLinearColor>::CreateReader(DataSet, RibbonRenderer->ColorBinding.GetDataSetBindableVariable().GetName());
@@ -609,7 +627,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 			SortedIndices.Add(i);
 		}
 
-		SortedIndices.Sort([&SortKeyReader](const int32& A, const int32& B) {	return (SortKeyReader[A] < SortKeyReader[B]); });
+		RibbonLinkOrderSort(SortedIndices);
 
 		int VertexCount = 0, IndexCount = 0;
 		AddRibbonVerts(SortedIndices, VertexCount, IndexCount);
@@ -637,7 +655,7 @@ void ULGUIWorldParticleSystemComponent::AddRibbonRendererData(FLGUIMeshSection* 
 			for (TPair<FNiagaraID, TArray<int32>>& Pair : MultiRibbonSortedIndices)
 			{
 				TArray<int32>& SortedIndices = Pair.Value;
-				SortedIndices.Sort([&SortKeyReader](const int32& A, const int32& B) {	return (SortKeyReader[A] < SortKeyReader[B]); });
+				RibbonLinkOrderSort(SortedIndices);
 				AddRibbonVerts(SortedIndices, VertexCount, IndexCount);
 			}
 			if (IndexData.Num() > IndexCount)
