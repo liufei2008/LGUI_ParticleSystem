@@ -6,18 +6,9 @@
 #include "NiagaraComponent.h"
 #include "LGUIWorldParticleSystemComponent.generated.h"
 
-#if ENGINE_MAJOR_VERSION >= 5
-typedef FVector3f MyVector3;
-typedef FVector2f MyVector2;
-typedef FVector4f MyVector4;
-#else
-typedef FVector MyVector3;
-typedef FVector2D MyVector2;
-typedef FVector4 MyVector4;
-#endif
-
 struct FLGUIMeshSection;
 class FNiagaraEmitterInstance;
+class UNiagaraRendererProperties;
 class UNiagaraSpriteRendererProperties;
 class UNiagaraRibbonRendererProperties;
 
@@ -38,20 +29,20 @@ class LGUI_PARTICLESYSTEM_API ULGUIWorldParticleSystemComponent : public UNiagar
 public:
 	void GetRenderEntries(TArray<FLGUINiagaraRendererEntry>& Renderers);
 
-    void SetTransformationForUIRendering(MyVector2 Location, MyVector2 Scale, float Angle);
+    void SetTransformationForUIRendering(FVector2f Location, FVector2f Scale, float Angle);
 
-	void RenderUI(FLGUIMeshSection* UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, MyVector2 LocationOffset, float Alpha01, const int ParticleCountIncreaseAndDecrease);
+	void RenderUI(FLGUIMeshSection* UIMeshSection, FLGUINiagaraRendererEntry RendererEntry, float ScaleFactor, FVector2f LocationOffset, float Alpha01, const int ParticleCountIncreaseAndDecrease);
 private:
     void AddSpriteRendererData(FLGUIMeshSection* UIMeshSection
 		, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 		, UNiagaraSpriteRendererProperties* SpriteRenderer
-		, float ScaleFactor, MyVector2 LocationOffset, float Alpha01
+		, float ScaleFactor, FVector2f LocationOffset, float Alpha01
 		, const int ParticleCountIncreaseAndDecrease
 	);
     void AddRibbonRendererData(FLGUIMeshSection* UIMeshSection
 		, TSharedRef<const FNiagaraEmitterInstance, ESPMode::ThreadSafe> EmitterInst
 		, UNiagaraRibbonRendererProperties* RibbonRenderer
-		, float ScaleFactor, MyVector2 LocationOffset, float Alpha01
+		, float ScaleFactor, FVector2f LocationOffset, float Alpha01
 		, const int ParticleCountIncreaseAndDecrease
 	);
 };
