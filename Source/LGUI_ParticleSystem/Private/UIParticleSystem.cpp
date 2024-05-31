@@ -7,6 +7,7 @@
 #include "UIParticleSystemRendererItem.h"
 #include "Core/LGUIMesh/LGUIMeshComponent.h"
 #include "SLGUIParticleSystemUpdateAgentWidget.h"
+#include "PrefabSystem/LGUIPrefabManager.h"
 
 #define LOCTEXT_NAMESPACE "UIParticleSystem"
 
@@ -26,10 +27,8 @@ UUIParticleSystem::UUIParticleSystem(const FObjectInitializer& ObjectInitializer
 	PrimaryComponentTick.bStartWithTickEnabled = false;
 }
 
-void UUIParticleSystem::BeginPlay()
+void UUIParticleSystem::Awake_Implementation()
 {
-	Super::BeginPlay();
-
 	if (!UpdateAgentWidget.IsValid())
 	{
 		UpdateAgentWidget = SNew(SLGUIParticleSystemUpdateAgentWidget);
@@ -48,6 +47,14 @@ void UUIParticleSystem::BeginPlay()
 		{
 			SetRenderEntries();
 		}
+	}
+}
+void UUIParticleSystem::BeginPlay()
+{
+	Super::BeginPlay();
+	if (!ULGUIPrefabWorldSubsystem::IsLGUIPrefabSystemProcessingActor(this->GetOwner()))
+	{
+		this->Awake_Implementation();
 	}
 }
 
