@@ -5,18 +5,20 @@
 #include "CoreMinimal.h"
 #include "Core/ActorComponent/UIItem.h"
 #include "Core/Actor/UIBaseActor.h"
+#include "PrefabSystem/ILGUIPrefabInterface.h"
 #include "UIParticleSystem.generated.h"
 
 class UNiagaraSystem;
 
 UCLASS(ClassGroup = (LGUI), NotBlueprintable, meta = (BlueprintSpawnableComponent))
-class LGUI_PARTICLESYSTEM_API UUIParticleSystem : public UUIItem
+class LGUI_PARTICLESYSTEM_API UUIParticleSystem : public UUIItem, public ILGUIPrefabInterface
 {
 	GENERATED_BODY()
 
 public:
 	UUIParticleSystem(const FObjectInitializer& ObjectInitializer);
 
+	virtual void Awake_Implementation()override;
 	virtual void BeginPlay()override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason)override;
