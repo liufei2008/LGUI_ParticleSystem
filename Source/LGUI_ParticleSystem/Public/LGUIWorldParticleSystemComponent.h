@@ -20,6 +20,7 @@ struct FLGUIMeshSection;
 class FNiagaraEmitterInstance;
 class UNiagaraSpriteRendererProperties;
 class UNiagaraRibbonRendererProperties;
+class UNiagaraRendererProperties;
 
 struct FLGUINiagaraRendererEntry
 {

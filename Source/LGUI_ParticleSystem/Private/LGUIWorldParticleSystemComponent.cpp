@@ -3,7 +3,10 @@
 #include "LGUIWorldParticleSystemComponent.h"
 #include "NiagaraRibbonRendererProperties.h"
 #include "NiagaraSpriteRendererProperties.h"
+#include "NiagaraRendererProperties.h"
 #include "NiagaraRenderer.h"
+#include "NiagaraComponent.h"
+#include "NiagaraSystemInstanceController.h"
 #include "Core/LGUIMesh/LGUIMeshComponent.h"
 #include "Core/LGUIMeshIndex.h"
 
